@@ -228,3 +228,20 @@ def test_a_failed_cache_write_leaves_no_truncated_file(tmp_path, monkeypatch):
     monkeypatch.undo()
     assert not (tmp_path / "X_0001-25-000001.txt").exists()
     assert client.filing_text(filing) == "Annual report"
+
+
+def test_core_item_that_only_points_elsewhere_is_not_itemized():
+    # JPMorgan: Item 7 is a one-paragraph pointer to the MD&A inside the annual report (Item 15).
+    from filings_rag.sections import looks_itemized, split_items
+
+    text = "\n".join(
+        [
+            "Item 1A. Risk Factors.",
+            "Credit, market and liquidity risk. " * 200,
+            "Item 7. Management's Discussion and Analysis.",
+            "Refer to Management's Discussion and Analysis on pages 50-170 of the Annual Report. " * 3,
+            "Item 15. Exhibits, Financial Statement Schedules.",
+            "Net revenue rose on higher net interest income. " * 2000,
+        ]
+    )
+    assert not looks_itemized(split_items(text))

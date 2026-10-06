@@ -50,6 +50,11 @@ _ITEM_RE = re.compile(
 # stubs, so Risk Factors and MD&A never come out as sections. When either is missing
 # the split is unreliable and the caller indexes the whole document (see looks_itemized).
 CORE_ITEMS = ("1A", "7")
+# A core Item under this share of the filing is a pointer ("Refer to Management's Discussion and
+# Analysis on pages 50-170"), not the section itself: JPMorgan's Item 7 is 395 characters, 0.03% of
+# a filing whose real MD&A sits in the annual report filed under Item 15. Real Risk Factors and
+# MD&A are each a large part of a 10-K.
+MIN_CORE_SHARE = 0.01
 FULL_DOCUMENT = "0"
 
 
@@ -94,6 +99,7 @@ def split_items(text: str) -> list[Section]:
 
 
 def looks_itemized(sections: list[Section]) -> bool:
-    """True when the split found real Risk Factors and MD&A sections."""
-    found = {sec.item for sec in sections}
-    return all(item in found for item in CORE_ITEMS)
+    """True when the split found real Risk Factors and MD&A sections, not cross-reference stubs."""
+    length = {sec.item: len(sec.text) for sec in sections}
+    floor = MIN_CORE_SHARE * sum(length.values())
+    return all(item in length and length[item] >= floor for item in CORE_ITEMS)
