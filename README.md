@@ -75,6 +75,7 @@ filings-rag serve                 # http://localhost:8080
 filings-rag eval --skip-generation                    # retrieval only, no LLM cost
 filings-rag eval --llm ollama --judge ollama          # fully local answers + RAGAS
 filings-rag eval --llm anthropic --judge anthropic    # Claude answers and grades
+scripts/publish_results.sh                            # run the evals and push results to GitHub
 ```
 
 **Benchmark answer backends (Ollama vs vLLM vs Claude):**
@@ -112,6 +113,7 @@ container.
 ## Layout
 
 ```
+ROADMAP.md         what's next
 src/filings_rag/   edgar.py (download) · sections.py · chunking.py · embeddings.py · db.py
                    retrieval.py (vector / keyword / hybrid SQL) · rerank.py · llm.py · rag.py · api.py · cli.py
 evals/             questions.yaml · run_evals.py · results/
