@@ -186,3 +186,45 @@ def test_filing_cache_is_utf8_whatever_the_platform_default(tmp_path):
         [sys.executable, "-X", "warn_default_encoding", "-W", "error::EncodingWarning", "-c", code, str(tmp_path)],
         check=True,
     )
+
+
+def test_running_page_headers_do_not_cut_a_section_into_pages():
+    # Microsoft's 10-K repeats "Item 1A" at the top of every page of Risk Factors.
+    from filings_rag.sections import split_items
+
+    pages = [f"Risk page {i}. " + "Competition and regulation could hurt results. " * 30 for i in range(4)]
+    text = "\n".join(
+        ["Item 1A. | Risk Factors | 14", "Item 7. | Management's Discussion | 40", "", "ITEM 1A. RISK FACTORS"]
+        + [f"{p}\nItem 1A" for p in pages[:-1]]
+        + [pages[-1], "ITEM 7. MANAGEMENT'S DISCUSSION AND ANALYSIS", "Revenue grew. " * 40]
+    )
+    risk = next(s for s in split_items(text) if s.item == "1A")
+    assert all(f"Risk page {i}." in risk.text for i in range(4))
+    assert "Revenue grew" not in risk.text
+
+
+def test_a_failed_cache_write_leaves_no_truncated_file(tmp_path, monkeypatch):
+    import pathlib
+
+    import httpx
+
+    from filings_rag.edgar import EdgarClient, Filing
+
+    client = EdgarClient("Test Person test@example.com", cache_dir=tmp_path)
+    client.http = httpx.Client(
+        transport=httpx.MockTransport(lambda r: httpx.Response(200, text="<p>Annual report</p>"))
+    )
+    filing = Filing("X", "X Corp", 1, "10-K", "0001-25-000001", "2025-01-01", "2024-12-31", 2024, "x.htm")
+
+    real_write = pathlib.Path.write_text
+
+    def crash_midway(self, data, *a, **kw):
+        real_write(self, data[:3], *a, **kw)
+        raise OSError("disk full")
+
+    monkeypatch.setattr(pathlib.Path, "write_text", crash_midway)
+    with pytest.raises(OSError):
+        client.filing_text(filing)
+    monkeypatch.undo()
+    assert not (tmp_path / "X_0001-25-000001.txt").exists()
+    assert client.filing_text(filing) == "Annual report"

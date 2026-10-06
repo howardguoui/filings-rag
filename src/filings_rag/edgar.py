@@ -42,6 +42,14 @@ class Filing:
         return ARCHIVE_URL.format(cik=self.cik, acc=self.accession.replace("-", ""), doc=self.primary_doc)
 
 
+def _write_atomic(path: Path, text: str) -> None:
+    """Write to a temp file and rename, so a crash never leaves a truncated cache entry behind
+    (a later run would trust it: an empty 10-K once indexed as 0 chunks)."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
 class EdgarClient:
     """Small EDGAR client with a polite rate limit (8 requests/second) and an on-disk cache."""
 
@@ -89,7 +97,7 @@ class EdgarClient:
         if path.exists() and (max_age_s is None or time.time() - path.stat().st_mtime < max_age_s):
             return json.loads(path.read_text(encoding="utf-8"))
         data = self._get(url).json()
-        path.write_text(json.dumps(data), encoding="utf-8")
+        _write_atomic(path, json.dumps(data))
         return data
 
     def cik_for(self, ticker: str) -> tuple[int, str]:
@@ -119,9 +127,8 @@ class EdgarClient:
         if path.exists():
             return path.read_text(encoding="utf-8")
         text = html_to_text(self._get(filing.url).text)
-        path.write_text(text, encoding="utf-8")
-        meta = self.cache_dir / f"{filing.ticker}_{filing.accession}.json"
-        meta.write_text(json.dumps(asdict(filing)), encoding="utf-8")
+        _write_atomic(path, text)
+        _write_atomic(self.cache_dir / f"{filing.ticker}_{filing.accession}.json", json.dumps(asdict(filing)))
         return text
 
 

@@ -1,8 +1,8 @@
 """Split a 10-K into its standard Items (1, 1A, 7, 7A, 8, ...).
 
-A 10-K mentions each Item twice: once in the table of contents and once as the
-real section heading. For every Item we keep the occurrence whose section is
-longest, which is the real one.
+A 10-K mentions each Item at least twice: once in the table of contents and once as
+the real section heading (some filers also repeat it as a header on every page). For
+every Item we keep the occurrence whose section is longest, which is the real one.
 """
 
 from __future__ import annotations
@@ -69,11 +69,18 @@ def split_items(text: str) -> list[Section]:
     if not matches:
         return [Section(item=FULL_DOCUMENT, title="Full document", text=text.strip())]
 
-    best: dict[str, tuple[int, int]] = {}
-    for i, m in enumerate(matches):
+    # Consecutive headings for the same Item are one section: some filers (Microsoft) repeat
+    # "Item 1A" as a running header on every page, which would otherwise cut the section
+    # into page-sized pieces and keep only the longest page.
+    runs: list[tuple[str, int]] = []
+    for m in matches:
         item = m.group(1).upper()
-        start = m.start()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        if not runs or runs[-1][0] != item:
+            runs.append((item, m.start()))
+
+    best: dict[str, tuple[int, int]] = {}
+    for i, (item, start) in enumerate(runs):
+        end = runs[i + 1][1] if i + 1 < len(runs) else len(text)
         if item not in best or (end - start) > (best[item][1] - best[item][0]):
             best[item] = (start, end)
 
