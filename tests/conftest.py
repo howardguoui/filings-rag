@@ -15,6 +15,8 @@ import pytest
 from filings_rag.edgar import Filing, html_to_text
 from filings_rag.embeddings import HashEmbedder
 
+os.environ.setdefault("RAGAS_DO_NOT_TRACK", "true")  # no usage telemetry from test runs
+
 FIXTURES = Path(__file__).parent / "fixtures"
 
 

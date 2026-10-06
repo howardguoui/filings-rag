@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import statistics
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -88,6 +89,43 @@ def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: li
     return out
 
 
+def expected_random(n: int, m: int, k: int) -> tuple[float, float]:
+    """Hit rate@k and MRR a random ranking would score: n candidate chunks, m of them correct.
+
+    P(first correct chunk at rank r) = P(first r-1 all wrong) * m / (n - r + 1).
+    """
+    if n <= 0 or m <= 0:
+        return 0.0, 0.0
+    hit, mrr, all_wrong = 0.0, 0.0, 1.0
+    for r in range(1, min(k, n) + 1):
+        p_first = all_wrong * m / (n - r + 1)
+        hit += p_first
+        mrr += p_first / r
+        all_wrong *= max(0, n - r + 1 - m) / (n - r + 1)
+    return hit, mrr
+
+
+def random_baseline(retriever: Retriever, questions: list[Question], k: int) -> dict:
+    """What picking k chunks at random (under the same filters) would score. Questions are
+    filtered to their company, so this floor is well above zero; read the modes against it."""
+    hits, mrrs = [], []
+    for q in (q for q in questions if not q.unanswerable):
+        where, params = q.filters.sql()
+        params.update({"want_tickers": q.tickers, "want_items": q.sections})
+        row = retriever.conn.execute(
+            f"""SELECT count(*) AS n,
+                       count(*) FILTER (WHERE f.ticker = ANY(%(want_tickers)s)
+                                          AND c.section_item = ANY(%(want_items)s)) AS m
+                FROM chunks c JOIN filings f ON f.id = c.filing_id WHERE TRUE {where}""",
+            params,
+        ).fetchone()
+        h, r = expected_random(row["n"], row["m"], k)
+        hits.append(h)
+        mrrs.append(r)
+    n = max(1, len(hits))
+    return {"hit_rate": sum(hits) / n, "mrr": sum(mrrs) / n, "median_ms": 0.0, "per_question": [], "baseline": True}
+
+
 class _RagasEmbeddings:
     """Adapter so RAGAS can use this project's embedder for answer relevancy."""
 
@@ -110,12 +148,17 @@ def make_judge(settings: Settings, provider: str):
     if provider == "anthropic":
         from anthropic import AsyncAnthropic
 
-        return llm_factory(
+        judge = llm_factory(
             settings.anthropic_model,
             provider="anthropic",
             client=AsyncAnthropic(api_key=settings.anthropic_api_key),
             max_tokens=2048,
         )
+        # RAGAS defaults to temperature=0.01, top_p=0.1; the installed anthropic SDK's
+        # messages.create() takes neither, so every judge call would fail with TypeError.
+        for arg in ("temperature", "top_p"):
+            judge.model_args.pop(arg, None)
+        return judge
     from openai import AsyncOpenAI
 
     base, model = (
@@ -140,10 +183,22 @@ async def _score_answers(rows: list[dict], judge, embeddings) -> None:
             ("context_precision", precision, {"retrieved_contexts": r["contexts"]}),
         ):
             try:
-                r[name] = float((await metric.ascore(**args, **extra)).value)
+                value = float((await metric.ascore(**args, **extra)).value)
+                # RAGAS returns NaN when the judge can't parse a claim list; drop it rather than poison the mean
+                r[name] = value if math.isfinite(value) else None
             except Exception as exc:  # one bad judge call shouldn't sink the run
                 r[name] = None
                 r.setdefault("errors", []).append(f"{name}: {type(exc).__name__}: {exc}"[:300])
+
+
+JUDGED = ("faithfulness", "answer_relevancy", "context_precision")
+
+
+def check_judged(rows: list[dict]) -> None:
+    """Fail loudly if the judge scored nothing, instead of writing a report full of dashes."""
+    if rows and all(r.get(m) is None for r in rows for m in JUDGED):
+        errors = [e for r in rows for e in r.get("errors", [])][:3]
+        raise RuntimeError("The judge returned no scores. First errors:\n  " + "\n  ".join(errors or ["(none)"]))
 
 
 def generation_metrics(
@@ -185,6 +240,7 @@ def generation_metrics(
         judge = make_judge(settings, judge_name)
         judge_label = getattr(judge, "model", None) or judge_name
         asyncio.run(_score_answers(answerable, judge, _RagasEmbeddings(retriever.embedder)))
+        check_judged(answerable)
 
     def mean(key: str) -> float | None:
         vals = [r[key] for r in answerable if r.get(key) is not None]
@@ -226,6 +282,8 @@ def write_report(result: dict) -> Path:
     ]
     for mode, m in result["retrieval"].items():
         lines.append(f"| {mode} | {pct(m['hit_rate'])} | {m['mrr']:.2f} | {m['median_ms']:.0f} ms |")
+    if b := result.get("baseline"):
+        lines.append(f"| random ranking (baseline) | {pct(b['hit_rate'])} | {b['mrr']:.2f} | – |")
     g = result.get("generation")
     if g:
         judged = f"judged by {g['judge']}" if g["judge"] else "not judged: pass --judge for RAGAS scores"
@@ -267,6 +325,7 @@ def main(
         "k": k,
         "embed_model": settings.embed_model if settings.embed_provider == "fastembed" else settings.embed_provider,
         "retrieval": retrieval_metrics(retriever, questions, modes, k),
+        "baseline": random_baseline(retriever, questions, k),
     }
     if not skip_generation:
         best = max(result["retrieval"], key=lambda m: result["retrieval"][m]["mrr"])

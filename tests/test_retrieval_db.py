@@ -59,3 +59,13 @@ def test_rerank_mode_falls_back_to_hybrid_without_a_reranker(db, embedder):
 def test_keyword_search_with_no_matches_returns_empty(db, embedder):
     res = Retriever(db, embedder).search("zzzqqqxx", mode="keyword", k=3)
     assert res.hits == []
+
+
+def test_keyword_search_matches_any_term_not_all(db, embedder):
+    # "zzzqqqxx" appears nowhere; an AND query would return nothing and hybrid would be vector-only
+    res = Retriever(db, embedder).search("Who supplies the lidar sensors zzzqqqxx?", mode="keyword", k=3)
+    assert res.hits and "lidar" in res.hits[0].text.lower()
+
+
+def test_keyword_search_with_only_stopwords_returns_empty(db, embedder):
+    assert Retriever(db, embedder).search("what is the", mode="keyword", k=3).hits == []

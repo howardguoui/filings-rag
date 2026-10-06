@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 8
     daily_question_cap: int = 300
     max_question_chars: int = 500
+    # Proxies in front of the app that append to X-Forwarded-For (Render's load balancer = 1).
+    # The client address is read that many entries from the right, so a caller can't
+    # dodge the rate limit by sending their own X-Forwarded-For.
+    trusted_proxy_hops: int = 1
+    db_pool_max: int = 4
 
 
 @lru_cache

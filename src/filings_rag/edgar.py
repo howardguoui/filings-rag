@@ -20,7 +20,9 @@ from selectolax.lexbor import LexborNode as Node
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+SUBMISSIONS_PAGE_URL = "https://data.sec.gov/submissions/{name}"
 ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{acc}/{doc}"
+DAY = 24 * 3600
 
 
 @dataclass
@@ -58,31 +60,40 @@ class EdgarClient:
         self._lock = threading.Lock()
 
     def _get(self, url: str) -> httpx.Response:
-        with self._lock:
-            wait = self._min_interval - (time.monotonic() - self._last)
-            if wait > 0:
-                time.sleep(wait)
-            self._last = time.monotonic()
+        last_error: Exception | None = None
         for attempt in range(4):
-            resp = self.http.get(url)
-            if resp.status_code in (429, 503):
+            with self._lock:  # every attempt, retries included, respects the rate limit
+                wait = self._min_interval - (time.monotonic() - self._last)
+                if wait > 0:
+                    time.sleep(wait)
+                self._last = time.monotonic()
+            try:
+                resp = self.http.get(url)
+            except httpx.TransportError as exc:  # timeouts, resets
+                last_error = exc
                 time.sleep(2**attempt)
+                continue
+            if resp.status_code in (429, 500, 502, 503, 504):
+                retry_after = resp.headers.get("retry-after", "")
+                time.sleep(float(retry_after) if retry_after.isdigit() else 2**attempt)
+                last_error = httpx.HTTPStatusError(f"{resp.status_code} for {url}", request=resp.request, response=resp)
                 continue
             resp.raise_for_status()
             return resp
-        resp.raise_for_status()
-        return resp
+        assert last_error is not None
+        raise last_error
 
-    def _cached_json(self, name: str, url: str) -> dict:
+    def _cached_json(self, name: str, url: str, max_age_s: float | None = None) -> dict:
+        """Fetch JSON through the disk cache; max_age_s=None means the file never goes stale."""
         path = self.cache_dir / name
-        if path.exists():
+        if path.exists() and (max_age_s is None or time.time() - path.stat().st_mtime < max_age_s):
             return json.loads(path.read_text())
         data = self._get(url).json()
         path.write_text(json.dumps(data))
         return data
 
     def cik_for(self, ticker: str) -> tuple[int, str]:
-        table = self._cached_json("company_tickers.json", TICKERS_URL)
+        table = self._cached_json("company_tickers.json", TICKERS_URL, max_age_s=7 * DAY)
         for row in table.values():
             if row["ticker"].upper() == ticker.upper():
                 return int(row["cik_str"]), row["title"]
@@ -90,8 +101,18 @@ class EdgarClient:
 
     def latest_10ks(self, ticker: str, count: int = 1) -> list[Filing]:
         cik, company = self.cik_for(ticker)
-        subs = self._cached_json(f"submissions_{cik}.json", SUBMISSIONS_URL.format(cik=cik))
-        return filings_from_submissions(subs, ticker.upper(), company, cik, count)
+        subs = self._cached_json(f"submissions_{cik}.json", SUBMISSIONS_URL.format(cik=cik), max_age_s=DAY)
+        out = filings_from_submissions(subs, ticker.upper(), company, cik, count)
+        # "recent" holds the last ~1,000 filings; frequent filers (banks) push older 10-Ks
+        # into paginated files listed under filings.files.
+        for page in subs["filings"].get("files", []):
+            if len(out) >= count:
+                break
+            older = self._cached_json(page["name"], SUBMISSIONS_PAGE_URL.format(name=page["name"]))
+            out += filings_from_submissions(
+                {"name": subs.get("name"), "filings": {"recent": older}}, ticker.upper(), company, cik, count - len(out)
+            )
+        return out
 
     def filing_text(self, filing: Filing) -> str:
         path = self.cache_dir / f"{filing.ticker}_{filing.accession}.txt"
@@ -132,12 +153,30 @@ def filings_from_submissions(subs: dict, ticker: str, company: str, cik: int, co
 _BLOCK_TAGS = {"p", "div", "br", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6", "table", "section"}
 
 
+def _owner(node: Node, tag: str) -> Node | None:
+    """Nearest ancestor with this tag."""
+    parent = node.parent
+    while parent is not None and parent.tag != tag:
+        parent = parent.parent
+    return parent
+
+
 def _table_to_text(table: Node) -> str:
-    """Render an HTML table as 'cell | cell' rows so numbers keep their labels."""
+    """Render an HTML table as 'cell | cell' rows so numbers keep their labels.
+
+    Only this table's own rows and cells are visited; a nested table's text comes
+    through once, inside the cell that holds it.
+    """
     rows = []
     for tr in table.css("tr"):
+        owner = _owner(tr, "table")
+        if owner is None or owner.mem_id != table.mem_id:
+            continue
         cells = []
         for td in tr.css("td, th"):
+            row = _owner(td, "tr")
+            if row is None or row.mem_id != tr.mem_id:
+                continue
             t = re.sub(r"\s+", " ", td.text(separator=" ")).strip()
             if t and t not in {"$", ")", "%"}:
                 cells.append(t)
@@ -156,6 +195,8 @@ def html_to_text(html: str) -> str:
     for node in tree.css('[style*="display:none"], [style*="display: none"]'):
         node.decompose()
     for table in tree.css("table"):
+        if _owner(table, "table") is not None:
+            continue  # nested: rendered as part of its outer table
         text = _table_to_text(table)
         table.replace_with(f"\n{text}\n" if text else "\n")
     for tag in _BLOCK_TAGS - {"table"}:

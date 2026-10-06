@@ -98,6 +98,8 @@
       <table><thead><tr><th>Method</th><th>Hit rate</th><th></th><th>MRR</th><th>Median search</th></tr></thead><tbody>` +
       modes.map((m) => `<tr class="${m === best ? 'best' : ''}"><td>${MODE_LABEL[m] || m}</td><td class="num">${pct(ret[m].hit_rate)}</td>
         <td>${meter(ret[m].hit_rate)}</td><td class="num">${ret[m].mrr.toFixed(2)}</td><td class="num">${Math.round(ret[m].median_ms)} ms</td></tr>`).join('') +
+      (d.baseline ? `<tr class="baseline"><td>Random ranking (baseline)</td><td class="num">${pct(d.baseline.hit_rate)}</td>
+        <td>${meter(d.baseline.hit_rate)}</td><td class="num">${d.baseline.mrr.toFixed(2)}</td><td class="num">–</td></tr>` : '') +
       '</tbody></table>';
     const g = d.generation;
     if (g) {

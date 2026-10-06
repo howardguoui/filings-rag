@@ -36,10 +36,21 @@ ITEM_TITLES = {
     "16": "Form 10-K Summary",
 }
 
+# A heading line: "Item 7." / "ITEM 1A:" / "Item 9A - Controls..." with at most a title after it.
+# - (?![0-9a-z]) stops "Item 1" matching the start of "Item 1A" text like "Item 1ABC".
+# - [^\n]{0,160}$ keeps cross-references in prose ("Item 7 of this report describes ...")
+#   from being treated as headings, since those sit inside long paragraph lines.
 _ITEM_RE = re.compile(
-    r"^\s*item[\s ]+(1a|1b|1c|7a|9a|9b|9c|1[0-6]|[1-9])\s*[\.:\-—–]?",
+    r"^[ \t]*item[ \t\u00a0]+(1a|1b|1c|7a|9a|9b|9c|1[0-6]|[1-9])(?![0-9a-z])[ \t]*[\.:\-\u2014\u2013]?[^\n]{0,160}$",
     re.IGNORECASE | re.MULTILINE,
 )
+
+# Some 10-Ks (JPMorgan, Bank of America, ...) are the annual report with a "Form 10-K
+# cross-reference index" instead of Item headings: the index rows are table-of-contents
+# stubs, so Risk Factors and MD&A never come out as sections. When either is missing
+# the split is unreliable and the caller indexes the whole document (see looks_itemized).
+CORE_ITEMS = ("1A", "7")
+FULL_DOCUMENT = "0"
 
 
 @dataclass
@@ -50,13 +61,13 @@ class Section:
 
     @property
     def label(self) -> str:
-        return f"Item {self.item}. {self.title}"
+        return self.title if self.item == FULL_DOCUMENT else f"Item {self.item}. {self.title}"
 
 
 def split_items(text: str) -> list[Section]:
     matches = list(_ITEM_RE.finditer(text))
     if not matches:
-        return [Section(item="0", title="Full document", text=text.strip())]
+        return [Section(item=FULL_DOCUMENT, title="Full document", text=text.strip())]
 
     best: dict[str, tuple[int, int]] = {}
     for i, m in enumerate(matches):
@@ -72,4 +83,10 @@ def split_items(text: str) -> list[Section]:
         if len(body) < 200:  # table-of-contents stub with no real section behind it
             continue
         sections.append(Section(item=item, title=ITEM_TITLES.get(item, ""), text=body))
-    return sections or [Section(item="0", title="Full document", text=text.strip())]
+    return sections or [Section(item=FULL_DOCUMENT, title="Full document", text=text.strip())]
+
+
+def looks_itemized(sections: list[Section]) -> bool:
+    """True when the split found real Risk Factors and MD&A sections."""
+    found = {sec.item for sec in sections}
+    return all(item in found for item in CORE_ITEMS)

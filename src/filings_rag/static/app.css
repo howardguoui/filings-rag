@@ -83,3 +83,4 @@ tr.best td:first-child::before { content: ""; display: inline-block; width: 7px;
 .foot { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); margin-top: 56px; padding-top: 20px; padding-bottom: 32px; }
 @media (max-width: 560px) { .meter { min-width: 48px; } th:nth-child(4), td:nth-child(4) { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+tr.baseline td { color: var(--muted); font-style: italic; }

@@ -4,7 +4,7 @@ Ask questions about SEC 10-K filings and get answers cited to the exact section 
 Hybrid retrieval in Postgres (pgvector + full-text, fused with Reciprocal Rank Fusion), cross-encoder
 reranking, and an evaluation suite that measures retrieval and answer quality with RAGAS.
 
-**Live demo:** _add your Render URL here_ · **Stack:** Python, FastAPI, PostgreSQL + pgvector, fastembed (ONNX),
+**Stack:** Python, FastAPI, PostgreSQL + pgvector, fastembed (ONNX),
 Claude API / Ollama / vLLM, RAGAS, Docker, GitHub Actions
 
 ## How it works
@@ -25,11 +25,15 @@ flowchart LR
 
 - **Section-aware parsing.** 10-Ks list every Item twice (table of contents, then the real section). The parser keeps
   the longest occurrence of each Item, so "Item 1C. Cybersecurity" chunks contain the actual cybersecurity
-  disclosure.
+  disclosure. Only short heading lines count, so "see Item 7" in a paragraph doesn't split a section. Filings built
+  around a cross-reference index instead of Item headings (common for large banks) are detected and indexed whole.
 - **Contextual chunk headers.** Each chunk is embedded with a line like
   `Bank of America (BAC) 10-K FY2025, Item 7A. Market Risk`, so "rates rose 100 bps" is tied to a company and year.
 - **Hybrid search in one SQL query.** Vector similarity (HNSW, cosine) finds paraphrases; full-text search finds exact
-  terms like "Basel III" or "value-at-risk". Both rankings are fused with RRF: `score = Σ 1 / (60 + rank)`.
+  terms like "Basel III" or "value-at-risk". Keyword search matches any of the question's terms (an all-terms match
+  returns nothing for most natural questions) and ranks chunks with more of them higher. Both rankings are fused
+  with RRF: `score = Σ 1 / (60 + rank)`. Filtered vector search uses pgvector's iterative HNSW scan, so filtering to
+  one company still returns k results.
 - **Reranking.** The top 40 fused candidates are rescored by a cross-encoder (`ms-marco-MiniLM-L-6-v2`) that reads
   the question and passage together.
 - **Grounded answers.** The model may only use the numbered sources, must cite every sentence, and must say
@@ -38,16 +42,20 @@ flowchart LR
 
 ## Evaluation
 
-`evals/questions.yaml` holds 36 questions across 8 companies, each tagged with the 10-K Item that answers it, plus
-4 unanswerable questions that test refusals.
+`evals/questions.yaml` holds 36 questions across 8 companies: 32 answerable, each tagged with the 10-K Item that
+answers it, and 4 unanswerable ones that test refusals.
 
 | What | Metric |
 | --- | --- |
-| Retrieval | Hit rate@6 (the right company and Item is retrieved) and MRR, for vector, keyword, hybrid and hybrid + rerank |
+| Retrieval | Hit rate@6 (the right company and Item is retrieved) and MRR, for vector, keyword, hybrid and hybrid + rerank, next to the exact score of a random ranking under the same filters |
 | Answers (RAGAS, LLM judge) | Faithfulness, answer relevancy, context precision (no reference needed) |
 | Behavior | Citation rate, correct refusals on unanswerable questions, false refusals |
 
-Latest results: [`evals/results/latest.md`](evals/results/latest.md) (also on the demo's Evaluations tab).
+Each run writes `evals/results/latest.md` and `latest.json`; the demo's Evaluations tab shows the latest run.
+Commit the results folder so the deployed demo shows them.
+
+Filings indexed whole (cross-reference index) count as misses in the section-level retrieval metric, since there is
+no Item label to check.
 
 ## Run it locally
 
@@ -80,8 +88,9 @@ python -m benchmarks.llm_latency --providers ollama vllm anthropic --runs 10
 
 1. Push this repo to GitHub, then in Render choose **New → Blueprint** and pick the repo. `render.yaml` creates a
    free Postgres database and the Docker web service.
-2. In the web service's **Environment** tab, set `ANTHROPIC_API_KEY`. Set a monthly spend limit in the Anthropic
-   console; the app also caps questions per minute and per day.
+2. Render asks for `ANTHROPIC_API_KEY` when it creates the Blueprint (or set it later in the service's
+   **Environment** tab; until then the app starts and `/api/health` reports the missing key). Set a monthly spend
+   limit in the Anthropic console; the app also caps questions per minute and per day.
 3. Load filings from your machine into the Render database (copy its **External Database URL**):
    `DATABASE_URL=<external url> filings-rag ingest`
 
@@ -92,11 +101,13 @@ Free Render web services sleep after 15 minutes idle (about a minute to wake), a
 
 ```bash
 docker compose up -d db
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres pytest
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/filings pytest
 ```
 
-Parsing, chunking, hybrid SQL against real pgvector, the API (validation, rate limits, failures) and the eval
-harness are covered; CI runs them on every push with a pgvector service container.
+Parsing, chunking, EDGAR pagination and retries, hybrid SQL against real pgvector, the API (validation, rate limits,
+connection pool, health check, failures), the eval harness, and the exact request shape sent to the Anthropic SDK
+and the RAGAS judge are covered. CI runs them on pushes to `main` and on pull requests, with a pgvector service
+container.
 
 ## Layout
 

@@ -73,3 +73,95 @@ def test_filings_from_submissions_skips_amendments_and_other_forms():
 def test_edgar_client_requires_contact_email():
     with pytest.raises(ValueError, match="contact email"):
         EdgarClient("my-script")
+
+
+def test_item_headings_ignore_prose_cross_references():
+    from filings_rag.sections import split_items
+
+    body = "Real risk discussion. " * 20
+    text = (
+        "Item 1A. Risk Factors\n" + body + "\n"
+        "Item 7 of Part II, Management's Discussion and Analysis, explains how these risks affected results "
+        "during the year and should be read together with the financial statements in Item 8.\n" + body + "\n"
+        "Item 7. Management's Discussion and Analysis\n" + body
+    )
+    sections = {s.item: s.text for s in split_items(text)}
+    assert set(sections) == {"1A", "7"}
+    assert "Item 7 of Part II" in sections["1A"]  # the cross-reference stayed inside Risk Factors
+
+
+def test_cross_reference_index_10k_is_indexed_whole(db, embedder):
+    from filings_rag.ingest import ingest_text
+    from filings_rag.sections import looks_itemized, split_items
+    from tests.conftest import make_filing
+
+    text = (
+        "Form 10-K Cross-reference Index\n"
+        "Item 1A. | Risk Factors | 8-31\n"
+        "Item 7. | Management's Discussion and Analysis | 52-160\n"
+        "Item 16. | Form 10-K Summary | None\n"
+        + ("Risk Factors\nCredit risk is the risk of loss from obligor default. " * 40)
+    )
+    assert not looks_itemized(split_items(text))
+    n = ingest_text(db, embedder, make_filing("XREF", "Crossref Bank", "0000000003-25-000001"), text)
+    assert n > 0
+    rows = db.execute(
+        "SELECT DISTINCT c.section_item, c.header FROM chunks c JOIN filings f ON f.id = c.filing_id "
+        "WHERE f.ticker = 'XREF'"
+    ).fetchall()
+    assert [r["section_item"] for r in rows] == ["0"]
+    assert rows[0]["header"].endswith("FY2025, Full document")
+
+
+def _recent(forms, years):
+    return {
+        "form": forms,
+        "accessionNumber": [f"0001-{y % 100}-{i:06d}" for i, y in enumerate(years)],
+        "filingDate": [f"{y}-02-15" for y in years],
+        "reportDate": [f"{y - 1}-12-31" for y in years],
+        "primaryDocument": [f"d{i}.htm" for i in range(len(forms))],
+    }
+
+
+def test_latest_10ks_follows_paginated_submission_files(tmp_path, monkeypatch):
+    import httpx
+
+    import filings_rag.edgar as edgar
+
+    pages = {
+        "/files/company_tickers.json": {"0": {"cik_str": 19617, "ticker": "BANK", "title": "Big Bank"}},
+        "/submissions/CIK0000019617.json": {
+            "name": "Big Bank",
+            "filings": {
+                "recent": _recent(["8-K", "10-K", "424B2"], [2026, 2026, 2025]),
+                "files": [{"name": "CIK0000019617-submissions-001.json"}],
+            },
+        },
+        "/submissions/CIK0000019617-submissions-001.json": _recent(["10-K", "8-K", "10-K"], [2025, 2024, 2024]),
+    }
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        if len(calls) == 1:
+            return httpx.Response(503, headers={"retry-after": "0"})  # one transient failure
+        return httpx.Response(200, json=pages[request.url.path])
+
+    monkeypatch.setattr(edgar.time, "sleep", lambda s: None)
+    client = EdgarClient("Test Person test@example.com", cache_dir=tmp_path)
+    client.http = httpx.Client(transport=httpx.MockTransport(handler))
+    out = client.latest_10ks("BANK", count=3)
+    assert [f.fiscal_year for f in out] == [2025, 2024, 2023]
+    assert calls[0] == calls[1] == "/files/company_tickers.json"  # retried after the 503
+    client.latest_10ks("BANK", count=3)
+    assert len(calls) == 4  # second call served from the disk cache
+
+
+def test_nested_tables_are_not_duplicated():
+    from filings_rag.edgar import html_to_text
+
+    html = (
+        "<body><table><tr><td>Outer A</td><td><table><tr><td>Inner 1</td><td>Inner 2</td></tr></table></td></tr>"
+        "<tr><td>Outer B</td><td>5</td></tr></table></body>"
+    )
+    assert html_to_text(html) == "Outer A | Inner 1 Inner 2\nOuter B | 5"

@@ -31,12 +31,12 @@ class LLM(Protocol):
 
 
 class AnthropicLLM:
-    def __init__(self, api_key: str, model: str):
+    def __init__(self, api_key: str, model: str, client=None):
         from anthropic import Anthropic
 
-        if not api_key:
+        if client is None and not api_key:
             raise ValueError("ANTHROPIC_API_KEY is not set")
-        self.client = Anthropic(api_key=api_key)
+        self.client = client or Anthropic(api_key=api_key)
         self.name = model
 
     def generate(self, system: str, user: str, max_tokens: int) -> Generation:
@@ -44,7 +44,6 @@ class AnthropicLLM:
         msg = self.client.messages.create(
             model=self.name,
             max_tokens=max_tokens,
-            temperature=0,
             system=system,
             messages=[{"role": "user", "content": user}],
         )

@@ -6,14 +6,14 @@ import json
 import threading
 import time
 from collections import defaultdict, deque
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -49,8 +49,11 @@ class RateLimiter:
         with self.lock:
             if date.today() != self.day:
                 self.day, self.today = date.today(), 0
+                self.hits.clear()
             if self.today >= self.daily_cap:
                 raise HTTPException(429, "The demo's daily question limit is reached. Try again tomorrow.")
+            for key in [k for k, q in self.hits.items() if not q or now - q[-1] > 60]:
+                del self.hits[key]  # forget idle clients so the dict can't grow without bound
             q = self.hits[client]
             while q and now - q[0] > 60:
                 q.popleft()
@@ -60,47 +63,70 @@ class RateLimiter:
             self.today += 1
 
 
-def _client_id(request: Request) -> str:
-    fwd = request.headers.get("x-forwarded-for")
-    return fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown")
+def _client_id(request: Request, trusted_hops: int) -> str:
+    """The address the trusted proxy saw. Entries further left are whatever the caller sent."""
+    fwd = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+    if trusted_hops > 0 and len(fwd) >= trusted_hops:
+        return fwd[-trusted_hops]
+    return request.client.host if request.client else "unknown"
 
 
 def create_app(settings: Settings | None = None, conn=None, embedder=None, llm=None, reranker=None) -> FastAPI:
     """Build the app. Tests inject conn/embedder/llm; production builds them from settings."""
     settings = settings or get_settings()
-    state: dict = {"conn": conn, "embedder": embedder, "llm": llm, "reranker": reranker}
+    state: dict = {"conn": conn, "pool": None, "embedder": embedder, "llm": llm, "reranker": reranker}
     limiter = RateLimiter(settings.rate_limit_per_minute, settings.daily_question_cap)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         # Load models and connect once at startup (anything not injected by tests).
-        from .db import connect, init_schema
+        from .db import init_schema, make_pool
         from .embeddings import make_embedder
         from .llm import make_llm
 
-        if state["conn"] is None:
-            state["conn"] = connect(settings.database_url)
         if state["embedder"] is None:
             state["embedder"] = make_embedder(settings)
-        init_schema(state["conn"], state["embedder"].dim)
+        if state["conn"] is None:
+            state["pool"] = make_pool(settings.database_url, state["embedder"].dim, settings.db_pool_max)
+        else:
+            init_schema(state["conn"], state["embedder"].dim)
         if state["llm"] is None:
-            state["llm"] = make_llm(settings)
+            try:
+                state["llm"] = make_llm(settings)
+            except ValueError as exc:  # e.g. ANTHROPIC_API_KEY not set yet: serve search, report the gap
+                state["llm_error"] = str(exc)
         if state["reranker"] is None and settings.rerank_enabled:
             from .rerank import CrossEncoderReranker
 
             state["reranker"] = CrossEncoderReranker(settings.rerank_model)
-        yield
+        try:
+            yield
+        finally:
+            if state["pool"] is not None:
+                state["pool"].close()
 
     app = FastAPI(title="filings-rag", version="0.1.0", lifespan=lifespan)
 
-    def retriever() -> Retriever:
-        return Retriever(state["conn"], state["embedder"], state["reranker"], settings.candidate_k)
+    @contextmanager
+    def database():
+        if state["pool"] is not None:
+            with state["pool"].connection() as c:
+                yield c
+        else:
+            yield state["conn"]
 
     @app.get("/api/health")
-    def health() -> dict:
+    def health():
+        try:
+            with database() as c:
+                c.execute("SELECT 1")
+        except Exception as exc:
+            return JSONResponse({"ok": False, "db": False, "error": type(exc).__name__}, status_code=503)
         return {
             "ok": True,
+            "db": True,
             "llm": getattr(state["llm"], "name", None),
+            "llm_error": state.get("llm_error"),
             "reranker": state["reranker"] is not None,
             "embed_model": settings.embed_model if settings.embed_provider == "fastembed" else settings.embed_provider,
         }
@@ -109,24 +135,28 @@ def create_app(settings: Settings | None = None, conn=None, embedder=None, llm=N
     def filings() -> list[dict]:
         from .db import list_filings
 
-        rows = list_filings(state["conn"])
+        with database() as c:
+            rows = list_filings(c)
         return [{**r, "filing_date": str(r["filing_date"])} for r in rows]
 
     @app.post("/api/ask")
     def ask(body: AskRequest, request: Request) -> dict:
         if len(body.question) > settings.max_question_chars:
             raise HTTPException(422, f"Keep questions under {settings.max_question_chars} characters.")
-        limiter.check(_client_id(request))
+        if state["llm"] is None:
+            raise HTTPException(503, f"The answer model is not configured: {state.get('llm_error', 'unknown')}")
+        limiter.check(_client_id(request, settings.trusted_proxy_hops))
         try:
-            ans = answer_question(
-                body.question,
-                retriever(),
-                state["llm"],
-                mode=body.mode or settings.retrieval_mode,
-                k=body.k,
-                filters=Filters(tickers=body.tickers, fiscal_year=body.fiscal_year),
-                max_tokens=settings.max_answer_tokens,
-            )
+            with database() as c:
+                ans = answer_question(
+                    body.question,
+                    Retriever(c, state["embedder"], state["reranker"], settings.candidate_k),
+                    state["llm"],
+                    mode=body.mode or settings.retrieval_mode,
+                    k=body.k,
+                    filters=Filters(tickers=body.tickers, fiscal_year=body.fiscal_year),
+                    max_tokens=settings.max_answer_tokens,
+                )
         except HTTPException:
             raise
         except Exception as exc:  # model/API failure: say what happened, don't leak a stack trace

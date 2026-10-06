@@ -20,8 +20,37 @@ from .edgar import Filing
 def connect(database_url: str) -> psycopg.Connection:
     conn = psycopg.connect(database_url, row_factory=dict_row, autocommit=True)
     conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    register_vector(conn)
+    _configure(conn)
     return conn
+
+
+def _configure(conn: psycopg.Connection) -> None:
+    register_vector(conn)
+    # pgvector >= 0.8: when a WHERE filter (ticker, year) discards most HNSW candidates,
+    # keep walking the graph until LIMIT rows match instead of returning fewer than k.
+    try:
+        conn.execute("SET hnsw.iterative_scan = strict_order")
+    except psycopg.errors.Error:
+        pass  # older pgvector; filtered searches may return fewer rows
+
+
+def make_pool(database_url: str, dim: int, max_size: int = 4):
+    """Connection pool for the web app: checks each connection before use and replaces
+    dead ones, so the demo survives a database restart or an idle-connection drop."""
+    from psycopg_pool import ConnectionPool
+
+    with connect(database_url) as setup:  # extension + tables must exist before pooled connections register types
+        init_schema(setup, dim)
+    return ConnectionPool(
+        database_url,
+        min_size=1,
+        max_size=max_size,
+        kwargs={"row_factory": dict_row, "autocommit": True},
+        configure=_configure,
+        check=ConnectionPool.check_connection,
+        timeout=15,
+        open=True,
+    )
 
 
 def init_schema(conn: psycopg.Connection, dim: int) -> None:
@@ -57,6 +86,13 @@ def init_schema(conn: psycopg.Connection, dim: int) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS chunks_embedding_hnsw ON chunks USING hnsw (embedding vector_cosine_ops)")
     conn.execute("CREATE INDEX IF NOT EXISTS chunks_tsv_gin ON chunks USING gin (tsv)")
     conn.execute("CREATE INDEX IF NOT EXISTS chunks_filing ON chunks (filing_id)")
+
+
+def has_chunks(conn: psycopg.Connection, accession: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM chunks c JOIN filings f ON f.id = c.filing_id WHERE f.accession = %s LIMIT 1", (accession,)
+    ).fetchone()
+    return row is not None
 
 
 def upsert_filing(conn: psycopg.Connection, f: Filing) -> tuple[int, bool]:

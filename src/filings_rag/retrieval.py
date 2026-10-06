@@ -18,6 +18,13 @@ from .embeddings import Embedder
 
 RRF_K = 60
 
+# OR of the query's stemmed terms. websearch_to_tsquery ANDs every term, so a natural
+# question ("How does Apple describe its supply chain risk?") matches almost no chunk
+# and hybrid search silently degrades to vector-only. ts_rank_cd still ranks chunks
+# that contain more of the terms, closer together, first.
+# ('simple' re-parses the already-stemmed lexemes without stemming them again.)
+_TSQUERY = "to_tsquery('simple', replace(plainto_tsquery('english', %(text)s)::text, ' & ', ' | '))"
+
 
 @dataclass
 class Hit:
@@ -34,9 +41,8 @@ class Hit:
 
     @property
     def source_label(self) -> str:
-        return (
-            f"{self.company} ({self.ticker}) 10-K FY{self.fiscal_year}, Item {self.section_item}. {self.section_title}"
-        )
+        section = self.section_title if self.section_item == "0" else f"Item {self.section_item}. {self.section_title}"
+        return f"{self.company} ({self.ticker}) 10-K FY{self.fiscal_year}, {section}"
 
 
 @dataclass
@@ -83,7 +89,7 @@ def _keyword_sql(where: str) -> str:
     return f"""
         SELECT {_SELECT}, ts_rank_cd(c.tsv, query) AS score
         FROM chunks c JOIN filings f ON f.id = c.filing_id,
-             websearch_to_tsquery('english', %(text)s) query
+             {_TSQUERY} query
         WHERE c.tsv @@ query {where}
         ORDER BY score DESC
         LIMIT %(k)s"""
@@ -101,7 +107,7 @@ def _hybrid_sql(where: str) -> str:
         kw AS (
             SELECT c.id, row_number() OVER (ORDER BY ts_rank_cd(c.tsv, query) DESC) AS r
             FROM chunks c JOIN filings f ON f.id = c.filing_id,
-                 websearch_to_tsquery('english', %(text)s) query
+                 {_TSQUERY} query
             WHERE c.tsv @@ query {where}
             ORDER BY ts_rank_cd(c.tsv, query) DESC
             LIMIT %(cand)s

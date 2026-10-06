@@ -8,10 +8,10 @@ import time
 import psycopg
 
 from .chunking import chunk_section
-from .db import init_schema, insert_chunks, upsert_filing
+from .db import has_chunks, init_schema, insert_chunks, upsert_filing
 from .edgar import EdgarClient, Filing
 from .embeddings import Embedder
-from .sections import split_items
+from .sections import FULL_DOCUMENT, Section, looks_itemized, split_items
 
 log = logging.getLogger(__name__)
 
@@ -26,22 +26,33 @@ def ingest_text(
     text: str,
     items: set[str] | None = DEFAULT_ITEMS,
 ) -> int:
-    """Chunk, embed and store one filing's text. Skips filings already stored."""
-    filing_id, already = upsert_filing(conn, filing)
-    if already:
+    """Chunk, embed and store one filing's text. Skips filings already stored.
+
+    The filing row and its chunks are written in one transaction, so an interrupted
+    run never leaves a filing with half its chunks (which would then be skipped).
+    """
+    if has_chunks(conn, filing.accession):
         log.info("skip %s FY%s (already ingested)", filing.ticker, filing.fiscal_year)
         return 0
     doc_header = f"{filing.company} ({filing.ticker}) {filing.form} FY{filing.fiscal_year}"
-    chunks = []
-    for section in split_items(text):
-        if items and section.item not in items:
-            continue
-        chunks.extend(chunk_section(section, doc_header))
+    sections = split_items(text)
+    if looks_itemized(sections):
+        sections = [s for s in sections if not items or s.item in items]
+    else:
+        log.warning(
+            "%s FY%s has no usable Item headings (cross-reference index?); indexing the whole document",
+            filing.ticker,
+            filing.fiscal_year,
+        )
+        sections = [Section(item=FULL_DOCUMENT, title="Full document", text=text.strip())]
+    chunks = [c for section in sections for c in chunk_section(section, doc_header)]
     if not chunks:
         log.warning("no chunks for %s %s", filing.ticker, filing.accession)
         return 0
     vectors = embedder.embed_documents([c.embed_text for c in chunks])
-    return insert_chunks(conn, filing_id, chunks, vectors)
+    with conn.transaction():
+        filing_id, _ = upsert_filing(conn, filing)
+        return insert_chunks(conn, filing_id, chunks, vectors)
 
 
 def ingest_tickers(

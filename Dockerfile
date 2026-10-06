@@ -7,13 +7,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Dependencies first (an empty package stands in for src), so a code change doesn't
+# reinstall every wheel or re-download the models.
 COPY pyproject.toml README.md ./
-COPY src ./src
-RUN pip install .
+RUN mkdir -p src/filings_rag && touch src/filings_rag/__init__.py \
+    && pip install . && pip uninstall -y filings-rag && rm -rf src
 
 # Bake the embedding and reranker models into the image so cold starts don't download them.
 RUN python -c "from fastembed import TextEmbedding; from fastembed.rerank.cross_encoder import TextCrossEncoder; \
 TextEmbedding('BAAI/bge-small-en-v1.5'); TextCrossEncoder('Xenova/ms-marco-MiniLM-L-6-v2')"
+
+COPY src ./src
+RUN pip install --no-deps .
 
 # Latest evaluation results, shown on the Evaluations tab
 COPY evals/results ./evals/results

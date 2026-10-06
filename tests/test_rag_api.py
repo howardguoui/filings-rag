@@ -1,3 +1,5 @@
+import os
+
 from fastapi.testclient import TestClient
 
 from filings_rag.api import RateLimiter, create_app
@@ -124,3 +126,59 @@ def test_api_reports_model_failures_as_502(db, embedder):
     with TestClient(create_app(s, conn=db, embedder=embedder, llm=Broken(), reranker=None)) as c:
         r = c.post("/api/ask", json={"question": "revenue growth?"})
         assert r.status_code == 502 and "TimeoutError" in r.json()["detail"]
+
+
+def test_client_id_ignores_caller_supplied_forwarded_entries():
+    from starlette.requests import Request
+
+    from filings_rag.api import _client_id
+
+    def req(xff: str | None) -> Request:
+        headers = [(b"x-forwarded-for", xff.encode())] if xff else []
+        return Request({"type": "http", "headers": headers, "client": ("10.0.0.5", 1234)})
+
+    assert _client_id(req("6.6.6.6, 203.0.113.9"), 1) == "203.0.113.9"  # rightmost = what the proxy saw
+    assert _client_id(req("203.0.113.9"), 1) == "203.0.113.9"
+    assert _client_id(req(None), 1) == "10.0.0.5"
+    assert _client_id(req("6.6.6.6, 203.0.113.9"), 0) == "10.0.0.5"  # no proxy trusted
+
+
+def test_rate_limiter_forgets_idle_clients(monkeypatch):
+    import filings_rag.api as api
+
+    now = [1000.0]
+    monkeypatch.setattr(api.time, "monotonic", lambda: now[0])
+    lim = RateLimiter(per_minute=5, daily_cap=100)
+    for i in range(50):
+        lim.check(f"client-{i}")
+    now[0] += 120
+    lim.check("late")
+    assert set(lim.hits) == {"late"}
+
+
+def test_app_uses_a_connection_pool_when_no_connection_is_injected(db, embedder):
+    s = Settings(database_url=os.environ["TEST_DATABASE_URL"], llm_provider="fake", rerank_enabled=False)
+    with TestClient(create_app(s, embedder=embedder, llm=FakeLLM())) as c:
+        assert c.get("/api/health").json()["db"] is True
+        r = c.post("/api/ask", json={"question": "Who oversees cybersecurity risk?", "tickers": ["ACME"]})
+        assert r.status_code == 200 and r.json()["citations"]
+
+
+def test_health_reports_a_dead_database(db, embedder):
+    import psycopg
+
+    dead = psycopg.connect(os.environ["TEST_DATABASE_URL"])
+    app = create_app(Settings(llm_provider="fake", rerank_enabled=False), conn=dead, embedder=embedder, llm=FakeLLM())
+    with TestClient(app) as c:
+        dead.close()
+        r = c.get("/api/health")
+    assert r.status_code == 503 and r.json()["db"] is False
+
+
+def test_app_starts_without_an_api_key_and_says_so(db, embedder):
+    s = Settings(llm_provider="anthropic", anthropic_api_key="", rerank_enabled=False)
+    with TestClient(create_app(s, conn=db, embedder=embedder)) as c:
+        health = c.get("/api/health").json()
+        assert health["ok"] and "ANTHROPIC_API_KEY" in health["llm_error"]
+        r = c.post("/api/ask", json={"question": "revenue?"})
+        assert r.status_code == 503 and "ANTHROPIC_API_KEY" in r.json()["detail"]

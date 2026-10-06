@@ -57,7 +57,9 @@ def test_full_run_retrieval_only_writes_reports(db, embedder, tmp_path, monkeypa
     assert set(result["retrieval"]) == {"vector", "hybrid"}  # no reranker loaded -> mode skipped
     saved = json.loads((tmp_path / "latest.json").read_text())
     assert saved["n_questions"] == 4 and "generation" not in saved
-    assert "| hybrid |" in (tmp_path / "latest.md").read_text()
+    md = (tmp_path / "latest.md").read_text()
+    assert "| hybrid |" in md and "| random ranking (baseline) |" in md
+    assert 0 < saved["baseline"]["hit_rate"] < saved["retrieval"]["hybrid"]["hit_rate"]
 
 
 def test_generation_metrics_with_fake_llm_and_no_judge(db, embedder):
@@ -90,3 +92,25 @@ def test_report_formats_generation_block(tmp_path, monkeypatch):
     }
     text = write_report(result).read_text()
     assert "| faithfulness | 90% |" in text and "| answer relevancy | – |" in text
+
+
+def test_expected_random_matches_simple_cases():
+    from math import isclose
+
+    from evals.run_evals import expected_random
+
+    assert expected_random(10, 0, 5) == (0.0, 0.0)
+    assert expected_random(4, 4, 1) == (1.0, 1.0)
+    hit, mrr = expected_random(10, 1, 3)
+    assert isclose(hit, 0.3) and isclose(mrr, (1 + 1 / 2 + 1 / 3) / 10)
+    # brute force: 2 correct among 5, top 2
+    from itertools import permutations
+
+    ranks = []
+    for perm in permutations(range(5)):
+        first = next((i for i, x in enumerate(perm[:2], 1) if x < 2), None)
+        ranks.append(first)
+    bf_hit = sum(r is not None for r in ranks) / len(ranks)
+    bf_mrr = sum(1 / r for r in ranks if r) / len(ranks)
+    hit, mrr = expected_random(5, 2, 2)
+    assert isclose(hit, bf_hit) and isclose(mrr, bf_mrr)
