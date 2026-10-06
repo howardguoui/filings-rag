@@ -8,9 +8,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 JUDGE="${JUDGE:-ollama}"
 if [ "${SKIP_RUN:-0}" != 1 ]; then
-  if ! filings-rag ask "ping" >/dev/null 2>&1 || [ "$(python -c "
-from filings_rag.config import get_settings; from filings_rag.db import connect, list_filings
-print(len(list_filings(connect(get_settings().database_url))))" 2>/dev/null || echo 0)" = 0 ]; then
+  INDEXED=$(python -c "
+from filings_rag.config import get_settings; from filings_rag.db import connect, init_schema, list_filings
+s = get_settings(); c = connect(s.database_url); init_schema(c, s.embed_dim); print(len(list_filings(c)))")
+  if [ "$INDEXED" = 0 ]; then
     echo "No filings indexed yet: ingesting the demo companies."
     filings-rag ingest
   fi
