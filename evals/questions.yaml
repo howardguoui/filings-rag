@@ -1,0 +1,207 @@
+# Evaluation questions.
+# expect.sections: the 10-K Items where the answer lives. Retrieval counts a "hit" when a
+#   retrieved chunk is from one of these Items of one of the expected companies.
+# filter_tickers: true = search only that company (like picking its chip in the UI);
+#   false = search every filing, so retrieval must also find the right company.
+# unanswerable: true = the filings do not contain the answer; the model should say so.
+
+questions:
+  # Risk factors (Item 1A)
+  - id: aapl-supply-chain
+    question: What risks does Apple describe about depending on outsourcing partners and single-source suppliers?
+    tickers: [AAPL]
+    expect: {sections: ["1A"]}
+    filter_tickers: true
+  - id: nvda-export-controls
+    question: How do U.S. export controls affect NVIDIA's ability to sell products in China?
+    tickers: [NVDA]
+    expect: {sections: ["1A", "7"]}
+    filter_tickers: true
+  - id: tsla-key-person
+    question: What risk does Tesla describe about depending on Elon Musk?
+    tickers: [TSLA]
+    expect: {sections: ["1A"]}
+    filter_tickers: true
+  - id: amzn-competition-risk
+    question: What competitive risks does Amazon say it faces?
+    tickers: [AMZN]
+    expect: {sections: ["1A", "1"]}
+    filter_tickers: true
+  - id: msft-ai-risk
+    question: What risks does Microsoft identify related to its development and use of AI?
+    tickers: [MSFT]
+    expect: {sections: ["1A"]}
+    filter_tickers: true
+  - id: gs-credit-risk-factor
+    question: How does Goldman Sachs describe its exposure to credit risk from counterparties?
+    tickers: [GS]
+    expect: {sections: ["1A", "7A", "7"]}
+    filter_tickers: true
+
+  # Cybersecurity (Item 1C)
+  - id: jpm-cyber
+    question: How does JPMorgan Chase manage and govern cybersecurity risk?
+    tickers: [JPM]
+    expect: {sections: ["1C"]}
+    filter_tickers: true
+  - id: bac-cyber
+    question: Who oversees cybersecurity risk at Bank of America and how is it reported to the board?
+    tickers: [BAC]
+    expect: {sections: ["1C"]}
+    filter_tickers: true
+  - id: msft-cyber
+    question: Describe Microsoft's process for assessing and managing material risks from cybersecurity threats.
+    tickers: [MSFT]
+    expect: {sections: ["1C"]}
+    filter_tickers: true
+
+  # Business (Item 1)
+  - id: aapl-segments
+    question: What are Apple's reportable segments?
+    tickers: [AAPL]
+    expect: {sections: ["1", "8", "7"]}
+    filter_tickers: true
+  - id: msft-segments
+    question: What business segments does Microsoft report?
+    tickers: [MSFT]
+    expect: {sections: ["1", "8", "7"]}
+    filter_tickers: true
+  - id: tsla-employees
+    question: How many full-time employees did Tesla have at year end?
+    tickers: [TSLA]
+    expect: {sections: ["1"]}
+    filter_tickers: true
+  - id: nvda-markets
+    question: What markets does NVIDIA serve with its platforms?
+    tickers: [NVDA]
+    expect: {sections: ["1"]}
+    filter_tickers: true
+  - id: bac-segments
+    question: What are Bank of America's business segments?
+    tickers: [BAC]
+    expect: {sections: ["1", "7", "8"]}
+    filter_tickers: true
+
+  # Properties (Item 2) and legal (Item 3)
+  - id: tsla-factories
+    question: Where are Tesla's main manufacturing facilities located?
+    tickers: [TSLA]
+    expect: {sections: ["2", "1"]}
+    filter_tickers: true
+  - id: aapl-legal
+    question: What legal proceedings does Apple disclose?
+    tickers: [AAPL]
+    expect: {sections: ["3", "8"]}
+    filter_tickers: true
+
+  # Equity, dividends, buybacks (Item 5)
+  - id: aapl-buybacks
+    question: How much stock did Apple repurchase in the fourth quarter of the fiscal year?
+    tickers: [AAPL]
+    expect: {sections: ["5", "7", "8"]}
+    filter_tickers: true
+  - id: jpm-stock-market
+    question: On which exchange is JPMorgan Chase common stock listed?
+    tickers: [JPM]
+    expect: {sections: ["5"]}
+    filter_tickers: true
+
+  # MD&A (Item 7)
+  - id: nvda-datacenter
+    question: How did NVIDIA's Data Center revenue change during the year and what drove it?
+    tickers: [NVDA]
+    expect: {sections: ["7"]}
+    filter_tickers: true
+  - id: amzn-aws
+    question: How did AWS segment sales and operating income change compared with the prior year?
+    tickers: [AMZN]
+    expect: {sections: ["7"]}
+    filter_tickers: true
+  - id: tsla-gross-margin
+    question: What drove changes in Tesla's automotive gross margin?
+    tickers: [TSLA]
+    expect: {sections: ["7"]}
+    filter_tickers: true
+  - id: msft-cloud-revenue
+    question: How did Microsoft Cloud revenue grow during the fiscal year?
+    tickers: [MSFT]
+    expect: {sections: ["7"]}
+    filter_tickers: true
+  - id: gs-revenue-drivers
+    question: What drove changes in Goldman Sachs net revenues in Global Banking & Markets?
+    tickers: [GS]
+    expect: {sections: ["7"]}
+    filter_tickers: true
+
+  # Market risk (Item 7A)
+  - id: bac-rate-sensitivity
+    question: How sensitive is Bank of America's net interest income to changes in interest rates?
+    tickers: [BAC]
+    expect: {sections: ["7A", "7"]}
+    filter_tickers: true
+  - id: aapl-fx-risk
+    question: How does Apple manage foreign currency exchange rate risk?
+    tickers: [AAPL]
+    expect: {sections: ["7A", "8"]}
+    filter_tickers: true
+  - id: jpm-var
+    question: What is value-at-risk and how does JPMorgan use it to measure market risk?
+    tickers: [JPM]
+    expect: {sections: ["7A", "7"]}
+    filter_tickers: true
+
+  # Financial statements (Item 8) and controls (Item 9A)
+  - id: msft-income-tax
+    question: What was Microsoft's effective tax rate for the fiscal year?
+    tickers: [MSFT]
+    expect: {sections: ["8", "7"]}
+    filter_tickers: true
+  - id: amzn-controls
+    question: Did Amazon's management conclude that its internal control over financial reporting was effective?
+    tickers: [AMZN]
+    expect: {sections: ["9A", "8"]}
+    filter_tickers: true
+
+  # Cross-company: retrieval must find the right company without a filter
+  - id: x-bac-cyber
+    question: How does Bank of America govern cybersecurity risk?
+    tickers: [BAC]
+    expect: {sections: ["1C"]}
+    filter_tickers: false
+  - id: x-tsla-musk
+    question: What does Tesla say about the risk of losing Elon Musk's services?
+    tickers: [TSLA]
+    expect: {sections: ["1A"]}
+    filter_tickers: false
+  - id: x-nvda-china
+    question: What does NVIDIA say about export restrictions on its data center GPUs to China?
+    tickers: [NVDA]
+    expect: {sections: ["1A", "7"]}
+    filter_tickers: false
+  - id: x-aws
+    question: How did Amazon Web Services sales change year over year?
+    tickers: [AMZN]
+    expect: {sections: ["7"]}
+    filter_tickers: false
+
+  # Unanswerable: the model should say the filings do not contain this
+  - id: u-aapl-2040
+    question: What revenue does Apple forecast for fiscal year 2040?
+    tickers: [AAPL]
+    unanswerable: true
+    filter_tickers: true
+  - id: u-msft-cars
+    question: How many cars did Microsoft sell last year?
+    tickers: [MSFT]
+    unanswerable: true
+    filter_tickers: true
+  - id: u-jpm-ceo-favorite
+    question: What is the favorite restaurant of JPMorgan's CEO?
+    tickers: [JPM]
+    unanswerable: true
+    filter_tickers: true
+  - id: u-nvda-grocery
+    question: How many grocery stores does NVIDIA operate?
+    tickers: [NVDA]
+    unanswerable: true
+    filter_tickers: true

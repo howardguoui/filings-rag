@@ -1,0 +1,53 @@
+# Local stack: Postgres + pgvector and the API.
+#   docker compose up -d db          # just the database (then run the CLI from your venv)
+#   docker compose up -d             # database + API on http://localhost:8080
+#   docker compose --profile vllm up -d vllm   # optional vLLM server on http://localhost:8000/v1 (NVIDIA GPU)
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: filings
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/filings
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      VLLM_BASE_URL: http://vllm:8000/v1
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["8080:8080"]
+    depends_on:
+      db: {condition: service_healthy}
+
+  # OpenAI-compatible vLLM server. A 7B AWQ model fits a 16 GB GPU (e.g. RTX 5070 Ti).
+  # RTX 50-series (Blackwell) needs a recent vLLM image; if you see "no kernel image is
+  # available", pull a newer tag.
+  vllm:
+    profiles: ["vllm"]
+    image: vllm/vllm-openai:latest
+    command: >
+      --model Qwen/Qwen2.5-7B-Instruct-AWQ
+      --quantization awq_marlin
+      --max-model-len 8192
+      --gpu-memory-utilization 0.85
+    ports: ["8000:8000"]
+    ipc: host
+    volumes: [hf-cache:/root/.cache/huggingface]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+
+volumes:
+  pgdata:
+  hf-cache:

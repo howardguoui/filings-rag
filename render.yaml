@@ -1,0 +1,35 @@
+# Render Blueprint: a free web service (Docker) and a free Postgres database.
+# Render Postgres supports pgvector; the app runs CREATE EXTENSION vector on startup.
+# Free Postgres databases expire 30 days after creation (see render.com/docs/free).
+databases:
+  - name: filings-db
+    plan: free
+    databaseName: filings
+    user: filings
+
+services:
+  - type: web
+    name: filings-rag
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: filings-db
+          property: connectionString
+      - key: LLM_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false # set in the Render dashboard
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: RETRIEVAL_MODE
+        value: hybrid_rerank
+      - key: RERANK_ENABLED
+        value: "true" # set to "false" if the 512 MB instance runs out of memory
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "8"
+      - key: DAILY_QUESTION_CAP
+        value: "300"
