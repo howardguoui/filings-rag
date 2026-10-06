@@ -170,7 +170,7 @@ def create_app(settings: Settings | None = None, conn=None, embedder=None, llm=N
         path = RESULTS_DIR / "latest.json"
         if not path.exists():
             raise HTTPException(404, "No evaluation results yet. Run: filings-rag eval")
-        return json.loads(path.read_text())
+        return json.loads(path.read_text(encoding="utf-8"))
 
     @app.get("/")
     def index() -> FileResponse:

@@ -78,7 +78,7 @@ def main() -> None:
 
     OUT.mkdir(exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M")
-    (OUT / f"{stamp}.json").write_text(json.dumps(results, indent=2))
+    (OUT / f"{stamp}.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     lines = [
         f"# Answer-model benchmark, {stamp} UTC",
         "",
@@ -96,7 +96,7 @@ def main() -> None:
             lines.append(
                 f"| {p} | {r['model']} | {r['median_latency_ms']:.0f} ms | {r['p90_latency_ms']:.0f} ms | {tps} |"
             )
-    (OUT / "latest.md").write_text("\n".join(lines) + "\n")
+    (OUT / "latest.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
 
 

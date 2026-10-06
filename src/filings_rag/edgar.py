@@ -87,9 +87,9 @@ class EdgarClient:
         """Fetch JSON through the disk cache; max_age_s=None means the file never goes stale."""
         path = self.cache_dir / name
         if path.exists() and (max_age_s is None or time.time() - path.stat().st_mtime < max_age_s):
-            return json.loads(path.read_text())
+            return json.loads(path.read_text(encoding="utf-8"))
         data = self._get(url).json()
-        path.write_text(json.dumps(data))
+        path.write_text(json.dumps(data), encoding="utf-8")
         return data
 
     def cik_for(self, ticker: str) -> tuple[int, str]:
@@ -117,10 +117,11 @@ class EdgarClient:
     def filing_text(self, filing: Filing) -> str:
         path = self.cache_dir / f"{filing.ticker}_{filing.accession}.txt"
         if path.exists():
-            return path.read_text()
+            return path.read_text(encoding="utf-8")
         text = html_to_text(self._get(filing.url).text)
-        path.write_text(text)
-        (self.cache_dir / f"{filing.ticker}_{filing.accession}.json").write_text(json.dumps(asdict(filing)))
+        path.write_text(text, encoding="utf-8")
+        meta = self.cache_dir / f"{filing.ticker}_{filing.accession}.json"
+        meta.write_text(json.dumps(asdict(filing)), encoding="utf-8")
         return text
 
 

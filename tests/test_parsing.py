@@ -165,3 +165,24 @@ def test_nested_tables_are_not_duplicated():
         "<tr><td>Outer B</td><td>5</td></tr></table></body>"
     )
     assert html_to_text(html) == "Outer A | Inner 1 Inner 2\nOuter B | 5"
+
+
+def test_filing_cache_is_utf8_whatever_the_platform_default(tmp_path):
+    # 10-K cover pages use check-box characters ("☒") that Windows' default cp1252 can't encode;
+    # the first real ingest on Windows crashed writing the cache. -X warn_default_encoding turns
+    # any read or write that relies on the platform default into an error.
+    import subprocess
+    import sys
+
+    code = (
+        "import sys, httpx; from filings_rag.edgar import EdgarClient, Filing;"
+        "c = EdgarClient('Test Person test@example.com', cache_dir=sys.argv[1]);"
+        "c.http = httpx.Client(transport=httpx.MockTransport("
+        "lambda r: httpx.Response(200, text='<p>☒ Annual report</p>')));"
+        "f = Filing('X', 'X Corp', 1, '10-K', '0001-25-000001', '2025-01-01', '2024-12-31', 2024, 'x.htm');"
+        "assert '☒' in c.filing_text(f); assert c.filing_text(f) == c.filing_text(f)"
+    )
+    subprocess.run(
+        [sys.executable, "-X", "warn_default_encoding", "-W", "error::EncodingWarning", "-c", code, str(tmp_path)],
+        check=True,
+    )

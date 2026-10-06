@@ -48,7 +48,7 @@ class Question:
 
 
 def load_questions(path: Path = HERE / "questions.yaml") -> list[Question]:
-    raw = yaml.safe_load(path.read_text())["questions"]
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))["questions"]
     return [
         Question(
             id=q["id"],
@@ -264,8 +264,8 @@ def generation_metrics(
 def write_report(result: dict) -> Path:
     RESULTS.mkdir(parents=True, exist_ok=True)
     stamp = result["run_at"].replace(":", "").replace("-", "")[:15]
-    (RESULTS / f"{stamp}.json").write_text(json.dumps(result, indent=2))
-    (RESULTS / "latest.json").write_text(json.dumps(result, indent=2))
+    (RESULTS / f"{stamp}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    (RESULTS / "latest.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     def pct(x):
         return "–" if x is None else f"{x:.0%}"
@@ -298,7 +298,7 @@ def write_report(result: dict) -> Path:
         ):
             lines.append(f"| {name.replace('_', ' ')} | {pct(g[name])} |")
     path = RESULTS / "latest.md"
-    path.write_text("\n".join(lines) + "\n")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
 
 
@@ -331,5 +331,5 @@ def main(
         best = max(result["retrieval"], key=lambda m: result["retrieval"][m]["mrr"])
         result["generation"] = generation_metrics(retriever, questions, settings, llm, judge, best, k)
     report = write_report(result)
-    print(report.read_text())
+    print(report.read_text(encoding="utf-8"))
     return result
