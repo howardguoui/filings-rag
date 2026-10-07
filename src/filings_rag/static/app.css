@@ -9,6 +9,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
@@ -84,3 +85,6 @@ tr.best td:first-child::before { content: ""; display: inline-block; width: 7px;
 @media (max-width: 560px) { .meter { min-width: 48px; } th:nth-child(4), td:nth-child(4) { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 tr.baseline td { color: var(--muted); font-style: italic; }
+.notice { font-size: .92rem; color: var(--ink); background: var(--tint); border-left: 3px solid var(--signal);
+  padding: 10px 14px; border-radius: 4px; margin: 0 0 16px; }
+.ex[aria-current="true"] { border-style: solid; border-color: var(--link); }

@@ -4,6 +4,7 @@ filings-rag ingest AAPL MSFT NVDA JPM BAC --years 1
 filings-rag ask "What cybersecurity risks does JPMorgan describe?" --tickers JPM
 filings-rag eval --modes vector hybrid hybrid_rerank
 filings-rag serve
+filings-rag demo-export --llm ollama   # record answers into docs/ for the free GitHub Pages demo
 """
 
 from __future__ import annotations
@@ -75,6 +76,26 @@ def cmd_eval(args) -> None:
     run_evals(args.modes, args.llm, args.judge, args.limit, args.skip_generation)
 
 
+def cmd_demo_export(args) -> None:
+    from pathlib import Path
+
+    from .db import list_filings
+    from .demo import build_site, record_answers
+    from .llm import make_llm
+
+    s = get_settings()
+    retriever = _retriever(s, rerank=args.mode == "hybrid_rerank")
+    filings = [{"ticker": r["ticker"], "company": r["company"]} for r in list_filings(retriever.conn)]
+    if not filings:
+        raise SystemExit("No filings indexed yet. Run: filings-rag ingest")
+    recording = record_answers(retriever, make_llm(s, args.llm), mode=args.mode, max_tokens=s.max_answer_tokens)
+    evals_path = Path(args.evals)
+    evals = json.loads(evals_path.read_text(encoding="utf-8")) if evals_path.exists() else None
+    page = build_site(Path(args.out), recording, evals, filings)
+    empty = sum(not a["answer"].strip() for a in recording["answers"])
+    print(f"Wrote {page} with {len(recording['answers'])} recorded answers ({empty} empty).")
+
+
 def cmd_serve(args) -> None:
     import uvicorn
 
@@ -107,6 +128,13 @@ def main(argv: list[str] | None = None) -> None:
     e.add_argument("--limit", type=int, help="Only the first N questions")
     e.add_argument("--skip-generation", action="store_true", help="Retrieval metrics only (no LLM calls)")
     e.set_defaults(func=cmd_eval)
+
+    d = sub.add_parser("demo-export", help="Record real answers and build the static demo (GitHub Pages)")
+    d.add_argument("--llm", choices=["anthropic", "ollama", "vllm", "fake"])
+    d.add_argument("--mode", default="hybrid_rerank", choices=["vector", "keyword", "hybrid", "hybrid_rerank"])
+    d.add_argument("--out", default="docs", help="Folder GitHub Pages serves")
+    d.add_argument("--evals", default="evals/results/latest.json", help="Evaluation results to show")
+    d.set_defaults(func=cmd_demo_export)
 
     sv = sub.add_parser("serve", help="Run the web API and demo page")
     sv.add_argument("--host", default="0.0.0.0")

@@ -85,7 +85,17 @@ docker compose --profile vllm up -d vllm              # NVIDIA GPU, 16 GB is eno
 python -m benchmarks.llm_latency --providers ollama vllm anthropic --runs 10
 ```
 
+## Free static demo (GitHub Pages)
+
+`filings-rag demo-export --llm ollama` answers a fixed set of example questions for real (same retrieval and
+prompt as the live app), then writes the demo page, those recorded answers and the latest evaluation into `docs/`.
+With GitHub Pages serving `docs/` from `main`, the page runs with no server, database or API key: visitors pick a
+recorded question instead of typing their own, and the page says when and with which model each answer was made.
+
 ## Deploy to Render
+
+A live version (visitors type their own questions) needs a server and an LLM API key, which costs money.
+
 
 1. Push this repo to GitHub, then in Render choose **New → Blueprint** and pick the repo. `render.yaml` creates a
    free Postgres database and the Docker web service.

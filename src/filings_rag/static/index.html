@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/static/app.css" />
+<link rel="stylesheet" href="static/app.css" />
 <script>
   (function () {
     var t = null;
@@ -22,7 +22,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar">
   <div class="wrap bar-inner">
-    <a class="brand" href="/">Filings RAG</a>
+    <a class="brand" href="./">Filings RAG</a>
     <nav aria-label="Views" class="tabs" role="tablist">
       <button role="tab" id="tab-ask" aria-selected="true" aria-controls="view-ask">Ask</button>
       <button role="tab" id="tab-evals" aria-selected="false" aria-controls="view-evals">Evaluations</button>
@@ -38,6 +38,7 @@
     <h1>Ask the 10-K filings</h1>
     <p class="lead">Answers come only from the companies' latest annual reports, with every sentence cited to the
       section it came from.</p>
+    <p id="static-note" class="notice" hidden></p>
 
     <form id="ask-form" class="ask">
       <label for="q" class="sr-only">Your question</label>
@@ -90,6 +91,6 @@
     <a href="https://howardguoui.github.io/howardreactmainpage/">Howard Guo</a> ·
     <a href="https://github.com/howardguoui/filings-rag">Source on GitHub</a></p>
 </footer>
-<script src="/static/app.js"></script>
+<script src="static/app.js"></script>
 </body>
 </html>

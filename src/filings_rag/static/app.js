@@ -19,8 +19,14 @@
 
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Static mode (GitHub Pages copy built by `filings-rag demo-export`): recorded answers, no server.
+  const STATIC = !!document.querySelector('meta[name="fr-mode"][content="static"]');
+  const demo = STATIC ? fetch('demo.json').then((r) => r.json()) : null;
+
   // Company chips from the indexed filings
-  fetch('/api/filings').then((r) => r.ok ? r.json() : []).then((rows) => {
+  const filingsReq = STATIC ? demo.then((d) => d.filings || [])
+    : fetch('/api/filings').then((r) => r.ok ? r.json() : []);
+  filingsReq.then((rows) => {
     const seen = new Map();
     rows.forEach((r) => { if (!seen.has(r.ticker)) seen.set(r.ticker, r.company); });
     const box = $('#tickers');
@@ -33,16 +39,50 @@
         const on = !state.tickers.has(ticker);
         on ? state.tickers.add(ticker) : state.tickers.delete(ticker);
         b.setAttribute('aria-pressed', String(on));
+        if (STATIC) filterRecorded();
       });
       box.appendChild(b);
     });
   });
 
-  document.querySelectorAll('.ex').forEach((b) => b.addEventListener('click', () => {
+  // Recorded questions replace the text box in static mode
+  function filterRecorded() {
+    document.querySelectorAll('.ex[data-i]').forEach((b) => {
+      const tick = b.dataset.tickers.split(',');
+      b.hidden = state.tickers.size > 0 && !tick.some((t) => state.tickers.has(t));
+    });
+  }
+  if (STATIC) {
+    $('#q').hidden = true; $('#ask-form .row').hidden = true;
+    $('#tick-help').textContent = 'Pick a company to narrow the questions.';
+    $('#ask-form').addEventListener('submit', (e) => e.preventDefault());
+    demo.then((d) => {
+      const note = $('#static-note');
+      note.innerHTML = `Free demo with recorded answers: each was generated on ${esc(d.recorded_at)} by ${esc(d.model)} ` +
+        'on a local GPU, using the same retrieval and prompt as the live app. Pick a question below. ' +
+        'To ask your own, <a href="https://github.com/howardguoui/filings-rag#run-it-locally">run it yourself</a>.';
+      note.hidden = false;
+      const box = document.querySelector('.examples');
+      box.innerHTML = '';
+      d.answers.forEach((a, i) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'ex'; b.textContent = a.question;
+        b.dataset.i = String(i); b.dataset.tickers = (a.tickers || []).join(',');
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.ex[aria-current]').forEach((x) => x.removeAttribute('aria-current'));
+          b.setAttribute('aria-current', 'true');
+          renderAnswer(a, `Recorded ${d.recorded_at}`);
+        });
+        box.appendChild(b);
+      });
+    }).catch(() => { $('#status').className = 'status err'; $('#status').textContent = 'Could not load the recorded answers.'; });
+  }
+
+  if (!STATIC) document.querySelectorAll('.ex').forEach((b) => b.addEventListener('click', () => {
     $('#q').value = b.textContent; $('#ask-form').requestSubmit();
   }));
 
-  function renderAnswer(data) {
+  function renderAnswer(data, note) {
     const cited = new Map(data.citations.map((c) => [c.n, c]));
     // Link [n] markers to their source entries
     const html = esc(data.answer).replace(/\[(\d+)\]/g, (m, n) =>
@@ -55,7 +95,8 @@
     const t = data.timings_ms || {};
     const total = Object.values(t).reduce((a, b) => a + b, 0);
     $('#meta').textContent = `${MODE_LABEL[data.mode] || data.mode} · ${data.model} · ${Math.round(total)} ms` +
-      (t.rerank_ms ? ` (rerank ${Math.round(t.rerank_ms)} ms, answer ${Math.round(t.generate_ms || 0)} ms)` : '');
+      (t.rerank_ms ? ` (rerank ${Math.round(t.rerank_ms)} ms, answer ${Math.round(t.generate_ms || 0)} ms)` : '') +
+      (note ? ` · ${note}` : '');
     $('#answer').hidden = false;
   }
 
@@ -86,7 +127,7 @@
   async function loadEvals() {
     if (evalsLoaded) return;
     const box = $('#evals');
-    const r = await fetch('/api/evals/latest');
+    const r = await fetch(STATIC ? 'evals.json' : '/api/evals/latest');
     if (!r.ok) { box.innerHTML = '<p class="lead">No evaluation results yet. Run <code>filings-rag eval</code>.</p>'; return; }
     const d = await r.json(); evalsLoaded = true;
     const ret = d.retrieval || {};
