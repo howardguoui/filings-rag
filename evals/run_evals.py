@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import re
 import statistics
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -261,10 +262,14 @@ def generation_metrics(
     }
 
 
+def result_stamp(run_at: str) -> str:
+    """'2026-10-07 00:11 UTC' -> '202610070011': digits only, so file names have no spaces."""
+    return re.sub(r"\D", "", run_at)[:12]
+
+
 def write_report(result: dict) -> Path:
     RESULTS.mkdir(parents=True, exist_ok=True)
-    stamp = result["run_at"].replace(":", "").replace("-", "")[:15]
-    (RESULTS / f"{stamp}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    (RESULTS / f"{result_stamp(result['run_at'])}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     (RESULTS / "latest.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     def pct(x):

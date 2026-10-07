@@ -114,3 +114,10 @@ def test_expected_random_matches_simple_cases():
     bf_mrr = sum(1 / r for r in ranks if r) / len(ranks)
     hit, mrr = expected_random(5, 2, 2)
     assert isclose(hit, bf_hit) and isclose(mrr, bf_mrr)
+
+
+def test_result_file_names_are_digits_only():
+    from evals.run_evals import result_stamp
+
+    # The first real run was saved as "20261007 0011 U.json": the old slicing cut "UTC" in half.
+    assert result_stamp("2026-10-07 00:11 UTC") == "202610070011"
