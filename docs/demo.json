@@ -1,0 +1,548 @@
+{
+  "recorded_at": "2026-10-07 17:16 UTC",
+  "model": "qwen3:8b",
+  "mode": "hybrid_rerank",
+  "answers": [
+    {
+      "question": "What cybersecurity risks does JPMorgan describe?",
+      "answer": "JPMorgan identifies the following cybersecurity risks:  \n1. Cyber attacks causing unauthorized access, data breaches, service disruptions, or system sabotage [1][3][5].  \n2. Third-party risks from vendors, supply chains, and service providers, including ransomware, supply-chain compromises, and system failures [3][4].  \n3. Insider threats and integration challenges during business acquisitions [4].  \n4. Risks from clients/customers whose systems operate beyond JPMorgan\u2019s control [3].  \n5. Potential financial loss, litigation, reputational harm, and operational disruptions from breaches [4][5].  \n6. Evolving threats due to AI, quantum computing, and advanced social engineering attacks [6].  \n7. Challenges detecting threats due to sophisticated techniques and third-party vulnerabilities [5][6].",
+      "citations": [
+        {
+          "n": 1,
+          "ticker": "JPM",
+          "company": "JPMORGAN CHASE & CO",
+          "fiscal_year": 2025,
+          "section": "Item 0. Full document",
+          "url": "https://www.sec.gov/Archives/edgar/data/19617/000162828026008131/jpm-20251231.htm",
+          "snippet": "testing of recovery strategies, as well as strategic and tactical initiatives to identify, assess, and manage resiliency risks. The framework operates in accordance with the Firm\u2019s overall approach to Operational Risk Management, including alignment with technology, cybersecurity, data, physical security, crisis management, real estate and outsourcing programs. Payment fraud risk\nPayment fraud ris"
+        },
+        {
+          "n": 3,
+          "ticker": "JPM",
+          "company": "JPMORGAN CHASE & CO",
+          "fiscal_year": 2025,
+          "section": "Item 0. Full document",
+          "url": "https://www.sec.gov/Archives/edgar/data/19617/000162828026008131/jpm-20251231.htm",
+          "snippet": "of computer systems, software, networks, storage devices, and other technology. The Firm\u2019s security efforts are designed to protect against, among other things, cybersecurity attacks that can result in unauthorized access to confidential information, the destruction of data, disruptions to or degradations of service, the sabotaging of systems or other damage.\nThe Firm has experienced, and expects "
+        },
+        {
+          "n": 5,
+          "ticker": "JPM",
+          "company": "JPMORGAN CHASE & CO",
+          "fiscal_year": 2025,
+          "section": "Item 0. Full document",
+          "url": "https://www.sec.gov/Archives/edgar/data/19617/000162828026008131/jpm-20251231.htm",
+          "snippet": "operational system involving one entity could cause industry-wide operational disruptions that could materially affect JPMorganChase\u2019s ability to conduct business. In addition, the risks associated with the disruption of an operational system of a third-party could be exacerbated if the services provided by that system are widely used by market participants.\nA successful cyber attack could cause s"
+        },
+        {
+          "n": 4,
+          "ticker": "JPM",
+          "company": "JPMORGAN CHASE & CO",
+          "fiscal_year": 2025,
+          "section": "Item 0. Full document",
+          "url": "https://www.sec.gov/Archives/edgar/data/19617/000162828026008131/jpm-20251231.htm",
+          "snippet": "to reduce the risk of data loss \u2022identifying, assessing and mitigating insider threat activities that could lead to the misuse of JPMorganChase\u2019s systems or client and customer information, and \u2022integrating acquired businesses, including where system integration may be complex or may require extensive and lengthy remediation or enhancement of controls.\nAny of the above cybersecurity risks to which"
+        },
+        {
+          "n": 6,
+          "ticker": "JPM",
+          "company": "JPMORGAN CHASE & CO",
+          "fiscal_year": 2025,
+          "section": "Item 0. Full document",
+          "url": "https://www.sec.gov/Archives/edgar/data/19617/000162828026008131/jpm-20251231.htm",
+          "snippet": "attacks evolve frequently and increase in sophistication, and therefore a cyber attack may not be recognized until launched or may go undetected for extended periods \u2022it is possible that a third-party, after establishing a foothold on an internal network without being detected, may gain access to other networks and systems\n\u2022cyber attacks can originate from a wide variety of sources, including cert"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 9.7,
+        "search_ms": 20.2,
+        "rerank_ms": 1610.8,
+        "generate_ms": 10880.5
+      },
+      "usage": {
+        "input_tokens": 2614,
+        "output_tokens": 862
+      },
+      "tickers": [
+        "JPM"
+      ]
+    },
+    {
+      "question": "How did NVIDIA's data center revenue change, and why?",
+      "answer": "NVIDIA's data center revenue increased by 68% in fiscal year 2026 compared to the prior year [4], driven by demand for Blackwell architectures and major platform shifts toward accelerated computing and AI [1][5]. Data Center computing revenue grew 59%, while networking revenue rose 142% due to NVLink fabric adoption and Ethernet/InfiniBand growth [5]. These gains were supported by strong Blackwell demand, though supply chain challenges and inventory management issues impacted gross margins [1][4].",
+      "citations": [
+        {
+          "n": 4,
+          "ticker": "NVDA",
+          "company": "NVIDIA CORP",
+          "fiscal_year": 2026,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "snippet": "4.90 | 2.94 | Up 67% Revenue for fiscal year 2026 was $215.9 billion, up 65% from a year ago. Data Center revenue for fiscal year 2026 was up 68% from a year ago. The strong year-on-year growth was driven by the major platform shifts \u2013 accelerated computing and AI.\nGaming revenue for fiscal year 2026 was up 41% from a year ago, driven by strong Blackwell demand. We expect supply constraints to be "
+        },
+        {
+          "n": 1,
+          "ticker": "NVDA",
+          "company": "NVIDIA CORP",
+          "fiscal_year": 2026,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "snippet": "in California in April 1993 and reincorporated in Delaware in April 1998. Recent Developments, Future Objectives and Challenges Revenue growth in fiscal year 2026 was driven by data center compute and networking platforms for accelerated computing and AI solutions. Our Blackwell architectures represented the majority of our Data Center revenue.\nThe availability of data centers, energy, and capital"
+        },
+        {
+          "n": 5,
+          "ticker": "NVDA",
+          "company": "NVIDIA CORP",
+          "fiscal_year": 2026,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "snippet": "Net income | 55.6 | 55.8 Reportable Segments Revenue by Reportable Segments Year Ended Jan 25, 2026 | Jan 26, 2025 | $ Change | % Change ($ in millions) Compute & Networking | 193,479 | 116,193 | 77,286 | 67 Graphics | 22,459 | 14,304 | 8,155 | 57\nTotal | 215,938 | 130,497 | 85,441 | 65\nOperating Income by Reportable Segments\nYear Ended\nJan 25, 2026 | Jan 26, 2025 | $ Change | % Change\n($ in milli"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 6.0,
+        "search_ms": 4.7,
+        "rerank_ms": 1683.4,
+        "generate_ms": 6027.8
+      },
+      "usage": {
+        "input_tokens": 2642,
+        "output_tokens": 460
+      },
+      "tickers": [
+        "NVDA"
+      ]
+    },
+    {
+      "question": "What does Apple say about supply chain concentration?",
+      "answer": "Apple identifies supply chain concentration as a significant risk, noting that its global supply chain is \"highly concentrated\" and depends on manufacturing facilities primarily in China, India, Japan, South Korea, Taiwan, and Vietnam [1]. The company emphasizes reliance on single or limited sources for critical components, exposing it to supply and pricing risks, including potential disruptions from geopolitical tensions, trade restrictions, or industrial accidents [4]. Such concentration could lead to increased costs, limited availability of components, and the need to restructure supply chains in response to restrictive measures, which may be costly and disruptive [5].",
+      "citations": [
+        {
+          "n": 1,
+          "ticker": "AAPL",
+          "company": "Apple Inc.",
+          "fiscal_year": 2025,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "snippet": "products and services, all of which can further adversely affect the Company\u2019s business and results of operations. Such restrictions can be announced with little or no advance notice, which can create uncertainty, and the Company may not be able to effectively mitigate any or all adverse impacts from such measures.\nGlobal supply chains can be highly concentrated, and an escalation of geopolitical "
+        },
+        {
+          "n": 4,
+          "ticker": "AAPL",
+          "company": "Apple Inc.",
+          "fiscal_year": 2025,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "snippet": "defect liabilities from time to time. While the Company relies on its partners to adhere to its supplier code of conduct, violations of the supplier code of conduct occur from time to time and can materially adversely affect the Company\u2019s business, reputation, results of operations, financial condition and stock price.\nChanges or additions to the Company\u2019s supply chain require considerable time an"
+        },
+        {
+          "n": 5,
+          "ticker": "AAPL",
+          "company": "Apple Inc.",
+          "fiscal_year": 2025,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "snippet": "business interruptions. Political events, trade and other international disputes, geopolitical tensions, conflict, terrorism, natural disasters, public health issues, industrial accidents and other business interruptions can have a material adverse effect on the Company and its customers, employees, suppliers, contract manufacturers, logistics providers, distributors, cellular network carriers and"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 5.3,
+        "search_ms": 4.3,
+        "rerank_ms": 1741.0,
+        "generate_ms": 4910.0
+      },
+      "usage": {
+        "input_tokens": 2401,
+        "output_tokens": 383
+      },
+      "tickers": [
+        "AAPL"
+      ]
+    },
+    {
+      "question": "How sensitive is Bank of America's net interest income to rate changes?",
+      "answer": "Bank of America's net interest income is sensitive to interest rate changes, with significant impacts depending on the direction and magnitude of rate shifts. For example, a +100 bps instantaneous parallel shift in rates would increase forecasted net interest income by $0.7 billion in 2025 and $1.1 billion in 2024, while a -100 bps shift would decrease it by $2.0 billion in 2025 and $2.3 billion in 2024 [6]. Larger shifts, such as \u00b1200 bps, result in even greater impacts, with a -200 bps shift causing a $4.9 billion decline in 2025 [6]. The sensitivity is further influenced by factors like deposit behavior, prepayment risks, and the mix of fixed-rate and variable-rate assets/liabilities [3][5].",
+      "citations": [
+        {
+          "n": 6,
+          "ticker": "BAC",
+          "company": "BANK OF AMERICA CORP /DE/",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085826000157/bac-20251231.htm",
+          "snippet": "capital. Table 44 presents the spot and 12-month forward rates used in developing the forward curve used in our baseline forecasts at December 31, 2025 and 2024. Table 44 | Forward Rates December 31, 2025 Federal Funds | SOFR | 10-Year SOFR Spot rates | 3.75 | 3.87 | 3.80\n12-month forward rates | 3.25 | 3.11 | 3.89\nDecember 31, 2024\nSpot rates | 4.50 | 4.49 | 4.07\n12-month forward rates | 4.00 | 3"
+        },
+        {
+          "n": 3,
+          "ticker": "BAC",
+          "company": "BANK OF AMERICA CORP /DE/",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085826000157/bac-20251231.htm",
+          "snippet": "rates. In higher rate scenarios, the analysis assumes that a portion of low-cost or noninterest-bearing deposits are replaced with higher yielding deposits or market-based funding. Conversely, in lower rate scenarios, the analysis assumes that a portion of higher yielding deposits or market-based funding are replaced with low-cost or noninterest-bearing deposits.\nFor larger interest rate shift sce"
+        },
+        {
+          "n": 5,
+          "ticker": "BAC",
+          "company": "BANK OF AMERICA CORP /DE/",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085826000157/bac-20251231.htm",
+          "snippet": "| (4.9) | (5.4) Flatteners Short-end instantaneous change | +100 | \u2014 | 0.5 | 1.1 Long-end instantaneous change | \u2014 | -100 | (0.3) | (0.1) Steepeners Short-end instantaneous change | -100 | \u2014 | (1.7) | (2.1) Long-end instantaneous change | \u2014 | +100 | 0.3 | 0.1\nWe continue to be asset sensitive to a parallel move in interest rates, with the majority of that impact coming from the short end of the yi"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 5.8,
+        "search_ms": 10.6,
+        "rerank_ms": 1673.0,
+        "generate_ms": 7748.8
+      },
+      "usage": {
+        "input_tokens": 2864,
+        "output_tokens": 599
+      },
+      "tickers": [
+        "BAC"
+      ]
+    },
+    {
+      "question": "What risks does Microsoft identify related to its development and use of AI?",
+      "answer": "Microsoft identifies several AI-related risks, including legal liability, reputational harm, and competitive challenges due to potential flaws in AI models, biased data, or harmful content generated by AI systems [1]. Risks also include regulatory scrutiny, ethical concerns, and societal impacts from AI technologies, particularly in areas like privacy, employment, and human rights [1][4]. Security vulnerabilities from AI-generated code, open-source software, and third-party systems expose customers to cyberattacks and data breaches [3][5]. Additionally, AI's rapid evolution may outpace security measures, increasing risks in complex environments [3]. Conversational AI systems pose specific risks for children and adolescents, with potential regulatory penalties for non-compliance [2]. Finally, AI's integration into internal and third-party systems creates new attack surfaces and challenges in maintaining adequate security controls [5].",
+      "citations": [
+        {
+          "n": 1,
+          "ticker": "MSFT",
+          "company": "MICROSOFT CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm",
+          "snippet": "products and services do not work as intended, are utilized in methods not intended, violate the law, or harm individuals or businesses, we may be subject to legal claims or enforcement actions. These risks, if realized, may increase our costs, damage our reputation, or adversely affect our results of operations.\nIssues in the development, deployment, and use of AI may result in reputational or co"
+        },
+        {
+          "n": 4,
+          "ticker": "MSFT",
+          "company": "MICROSOFT CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm",
+          "snippet": "AI training, outputs, and system behavior. They are further compounded by the evolving regulatory landscape, with new laws emerging globally and increased scrutiny from regulators and lawmakers. Certain AI technologies and use cases present ethical issues or may have broad or uneven impacts on society or vulnerable groups within society.\nThere is also rising divergence globally in how to address t"
+        },
+        {
+          "n": 3,
+          "ticker": "MSFT",
+          "company": "MICROSOFT CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm",
+          "snippet": "user activity may result in ransomware or other malicious software impacting a customer\u2019s use of our products or services. Our products are highly complex and weaknesses may exist in our development processes. For example, code generated by AI could include errors, deficiencies, or vulnerabilities that increase our exposure to cyberattacks.\nAdditionally, open-source software can also contain vulne"
+        },
+        {
+          "n": 5,
+          "ticker": "MSFT",
+          "company": "MICROSOFT CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm",
+          "snippet": "other consumer-oriented technologies. Increasing use of AI, including models, algorithms, copilots, and autonomous or semi-autonomous agents, in our internal or third-party systems may create new attack surfaces or methods for adversaries. Our business policies and internal security controls may not keep pace with emerging threats or the evolving regulatory landscape.\nInadequate account security o"
+        },
+        {
+          "n": 2,
+          "ticker": "MSFT",
+          "company": "MICROSOFT CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm",
+          "snippet": "conversational or emotionally engaging AI systems, may present distinct risks for children and adolescents. Failure to comply with these requirements may subject us to enhanced regulatory oversight, civil or criminal liability, fines and penalties, or other reputational damage, which could adversely affect our business, financial condition, and results of operations.\nOur products and services, how"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 5.9,
+        "search_ms": 6.3,
+        "rerank_ms": 1644.4,
+        "generate_ms": 8870.0
+      },
+      "usage": {
+        "input_tokens": 2157,
+        "output_tokens": 682
+      },
+      "tickers": [
+        "MSFT"
+      ]
+    },
+    {
+      "question": "How do U.S. export controls affect NVIDIA's ability to sell products in China?",
+      "answer": "U.S. export controls restrict NVIDIA's ability to sell products in China by requiring degraded versions of chips (e.g., H200s) to comply with U.S. regulations, which Chinese regulators deemed discriminatory [3]. These controls have effectively foreclosed NVIDIA from the China data center market, allowing competitors to dominate and build ecosystems that challenge NVIDIA globally [6]. Additionally, Chinese government policies, such as the \"Action Plan\" for data centers, may further restrict NVIDIA's ability to meet new standards even if export controls ease [4]. Export controls also impose tariffs and compliance burdens, risking litigation and reduced competitiveness [6].",
+      "citations": [
+        {
+          "n": 3,
+          "ticker": "NVDA",
+          "company": "NVIDIA CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "snippet": "impacted and may in the future negatively impact demand for our products, benefiting competitors that offer alternatives less likely to be restricted by further controls. Repeated changes in the export control rules are likely to impose compliance burdens on our business and our customers, negatively and materially impacting our business.\nIncreasing use of economic sanctions and export controls ha"
+        },
+        {
+          "n": 6,
+          "ticker": "NVDA",
+          "company": "NVIDIA CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1. Business",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "snippet": "be allowed into China. The license requires that the H200s go through an inspection process in the United States prior to any shipment to the customer. As a result, any H200 shipped under the new licensing program will be subject to a 25% tariff upon importation into the United States.\nIn the event that we are able to sell licensed products into the China market, we may not be able to pass along a"
+        },
+        {
+          "n": 4,
+          "ticker": "NVDA",
+          "company": "NVIDIA CORP",
+          "fiscal_year": 2026,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "snippet": "our ability to develop and supply solutions for our automotive customers. The USG is also considering restrictions that would limit our ability to support third-party applications and models built on open-source foundation models originating in China. Such restrictions, if implemented, would favor our foreign competitors and negatively impact our business.\nAdditionally, restrictions imposed by the"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 7.2,
+        "search_ms": 6.2,
+        "rerank_ms": 1537.4,
+        "generate_ms": 9091.5
+      },
+      "usage": {
+        "input_tokens": 2254,
+        "output_tokens": 743
+      },
+      "tickers": [
+        "NVDA"
+      ]
+    },
+    {
+      "question": "What competitive risks does Amazon say it faces?",
+      "answer": "Amazon identifies several competitive risks, including intense competition across geographies and industries such as e-commerce, physical retail, web services, and logistics, with competitors having greater resources, brand recognition, and market presence [1]. New business models, well-funded entrants, and technological advancements (e.g., AI, satellites) further intensify competition [1]. Local companies may outcompete Amazon in international markets due to deeper local customer understanding and established brands [4]. Regulatory scrutiny and evolving laws also impact competition, with investigations into practices like antitrust and data privacy practices [6].",
+      "citations": [
+        {
+          "n": 1,
+          "ticker": "AMZN",
+          "company": "AMAZON COM INC",
+          "fiscal_year": 2025,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm",
+          "snippet": "and adversely affect us in the future. References to past events are provided by way of example only and are not intended to be a complete listing or a representation as to whether or not such factors have occurred in the past. Business and Industry Risks We Face Intense Competition\nOur businesses are rapidly evolving and intensely competitive, and we have many competitors across geographies, incl"
+        },
+        {
+          "n": 4,
+          "ticker": "AMZN",
+          "company": "AMAZON COM INC",
+          "fiscal_year": 2025,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm",
+          "snippet": "adoption of evolving business models. Local companies may have a substantial competitive advantage because of their greater understanding of, and focus on, the local customer, as well as their more established local brand names. The inability to hire, train, retain, and manage sufficient required personnel may limit our international growth.\nThe People\u2019s Republic of China (\u201cPRC\u201d) and India regulat"
+        },
+        {
+          "n": 6,
+          "ticker": "AMZN",
+          "company": "AMAZON COM INC",
+          "fiscal_year": 2025,
+          "section": "Item 1A. Risk Factors",
+          "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm",
+          "snippet": "and scope of such regulations is evolving and expanding as the scope of our businesses expand. We are regularly subject to formal and informal reviews, investigations, and other proceedings by governments and regulatory authorities under existing laws, regulations, or interpretations or pursuing new and novel approaches to regulate our operations.\nFor example, we face a number of open investigatio"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 4.9,
+        "search_ms": 5.2,
+        "rerank_ms": 1679.6,
+        "generate_ms": 5895.0
+      },
+      "usage": {
+        "input_tokens": 2153,
+        "output_tokens": 471
+      },
+      "tickers": [
+        "AMZN"
+      ]
+    },
+    {
+      "question": "How does Goldman Sachs describe its exposure to credit risk from counterparties?",
+      "answer": "Goldman Sachs describes its credit risk exposure to counterparties through systems that capture exposure to individual counterparties and aggregates, including by product, internal credit rating, industry, country, and region [1][5]. Credit risk is measured using current exposure (amounts presently owed) and potential exposure (estimated future losses under market stress), with derivatives and securities financing transactions factoring netting and collateral [1]. For loans, exposure is tied to notional amounts, and stress tests assess impacts of counterparty defaults, market shocks, and sovereign events like Russia\u2019s invasion of Ukraine [1][6]. Mitigants include collateral, netting agreements, credit derivatives, and third-party guarantees, with internal credit ratings and ongoing counterparty evaluations to monitor risk [2][4][5]. Country exposures are monitored based on counterparty location, revenue sources, and regulatory jurisdictions, with non-material exposures noted for Ukraine, Lebanon, and Venezuela as of December 2025 [3][6].",
+      "citations": [
+        {
+          "n": 1,
+          "ticker": "GS",
+          "company": "GOLDMAN SACHS GROUP INC",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+          "snippet": "SUBSIDIARIES Management\u2019s Discussion and Analysis Our credit risk management systems capture credit exposure to individual counterparties and on an aggregate basis to counterparties and their subsidiaries. These systems also provide management with comprehensive information about our aggregate credit risk by product, internal credit rating, industry, country and region. Risk Measures\nWe measure ou"
+        },
+        {
+          "n": 5,
+          "ticker": "GS",
+          "company": "GOLDMAN SACHS GROUP INC",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+          "snippet": "concentrations; \u2022Establishing or approving underwriting standards; \u2022Assessing the likelihood that a counterparty will default on its payment obligations; \u2022Measuring our current and potential credit exposure and losses resulting from a counterparty default; \u2022Using credit risk mitigants, including collateral and hedging; and \u2022Maximizing recovery through active workout and restructuring of claims.\nWe"
+        },
+        {
+          "n": 6,
+          "ticker": "GS",
+          "company": "GOLDMAN SACHS GROUP INC",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+          "snippet": "Equivalent) AAA | 6 | 4 AA | 46 | 49 A | 25 | 24 BBB | 11 | 8 BB or lower | 11 | 14 Unrated | 1 | 1 Total | 100 | 100 The table above reflects collateral that we consider when determining credit risk.\nGoldman Sachs 2025 Form 10-K | 127\nTHE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nSelected Exposures\nWe have credit and market exposures, as described below, that"
+        },
+        {
+          "n": 2,
+          "ticker": "GS",
+          "company": "GOLDMAN SACHS GROUP INC",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+          "snippet": "other instruments we hold. Our exposure to credit risk comes mostly from client transactions in OTC derivatives and loans and lending commitments. Credit risk also comes from cash placed with banks, securities financing transactions (i.e., resale and repurchase agreements and securities borrowing and lending activities) and customer and other receivables.\nCredit Risk, which is part of our second l"
+        },
+        {
+          "n": 4,
+          "ticker": "GS",
+          "company": "GOLDMAN SACHS GROUP INC",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+          "snippet": "of credit risk concentrations. See \u201cOverview and Structure of Risk Management\u201d for information about the limit approval process. Credit Risk is responsible for monitoring these limits, and identifying and escalating to senior management and/or the appropriate risk committee, on a timely basis, instances where limits have been exceeded. Risk Mitigants\nTo reduce our credit exposures on derivatives a"
+        },
+        {
+          "n": 3,
+          "ticker": "GS",
+          "company": "GOLDMAN SACHS GROUP INC",
+          "fiscal_year": 2025,
+          "section": "Item 7. Management's Discussion and Analysis",
+          "url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+          "snippet": "related to Russia\u2019s invasion of Ukraine. In addition, economic and/or political uncertainties in Lebanon and Venezuela have led to concerns about their financial stability. Our credit exposure to counterparties or borrowers and our market exposure to issuers relating to each of these countries was not material as of December 2025.\nWe have a comprehensive framework to monitor, measure and assess ou"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 5.7,
+        "search_ms": 12.6,
+        "rerank_ms": 1639.2,
+        "generate_ms": 8878.6
+      },
+      "usage": {
+        "input_tokens": 2500,
+        "output_tokens": 749
+      },
+      "tickers": [
+        "GS"
+      ]
+    },
+    {
+      "question": "Where are Tesla's main manufacturing facilities located?",
+      "answer": "Tesla's main manufacturing facilities are located in the following cities:  \n1. **Austin, Texas** (Gigafactory Texas, owned) [1]  \n2. **Fremont, California** (Fremont Factory, owned) [1]  \n3. **Sparks, Nevada** (Gigafactory Nevada, owned) [1]  \n4. **Grunheide, Germany** (Gigafactory Berlin-Brandenburg, owned) [1]  \n5. **Shanghai, China** (Gigafactory Shanghai and Megafactory Shanghai, owned with land use rights) [1]  \n6. **Buffalo, New York** (Gigafactory New York, leased) [1]  \n\nAdditional U.S. facilities include Lathrop, California (Megafactory Lathrop, leased) [1].",
+      "citations": [
+        {
+          "n": 1,
+          "ticker": "TSLA",
+          "company": "Tesla, Inc.",
+          "fiscal_year": 2025,
+          "section": "Item 2. Properties",
+          "url": "https://www.sec.gov/Archives/edgar/data/1318605/000162828026003952/tsla-20251231.htm",
+          "snippet": "ITEM 2. PROPERTIES\nWe are headquartered in Austin, Texas. Our principal facilities include a large number of properties in North America, Europe and Asia utilized for manufacturing and assembly, warehousing, engineering, retail and service locations, Supercharger sites and administrative and sales offices. Our facilities are used to support both of our reporting segments, and are suitable and adeq"
+        }
+      ],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": false,
+      "timings_ms": {
+        "embed_ms": 5.1,
+        "search_ms": 5.0,
+        "rerank_ms": 1655.7,
+        "generate_ms": 5221.4
+      },
+      "usage": {
+        "input_tokens": 2342,
+        "output_tokens": 464
+      },
+      "tickers": [
+        "TSLA"
+      ]
+    },
+    {
+      "question": "How many cars did Microsoft sell last year?",
+      "answer": "The filings provided do not contain this information.",
+      "citations": [],
+      "mode": "hybrid_rerank",
+      "model": "ollama:qwen3:8b",
+      "abstained": true,
+      "timings_ms": {
+        "embed_ms": 4.7,
+        "search_ms": 4.5,
+        "rerank_ms": 1704.8,
+        "generate_ms": 4339.5
+      },
+      "usage": {
+        "input_tokens": 4068,
+        "output_tokens": 274
+      },
+      "tickers": [
+        "MSFT"
+      ]
+    }
+  ],
+  "filings": [
+    {
+      "ticker": "AAPL",
+      "company": "Apple Inc."
+    },
+    {
+      "ticker": "AMZN",
+      "company": "AMAZON COM INC"
+    },
+    {
+      "ticker": "BAC",
+      "company": "BANK OF AMERICA CORP /DE/"
+    },
+    {
+      "ticker": "GS",
+      "company": "GOLDMAN SACHS GROUP INC"
+    },
+    {
+      "ticker": "JPM",
+      "company": "JPMORGAN CHASE & CO"
+    },
+    {
+      "ticker": "MSFT",
+      "company": "MICROSOFT CORP"
+    },
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA CORP"
+    },
+    {
+      "ticker": "TSLA",
+      "company": "Tesla, Inc."
+    }
+  ]
+}

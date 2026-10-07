@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="fr-mode" content="static" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filings RAG: ask 10-K filings</title>
+<meta name="description" content="Ask questions about SEC 10-K filings. Hybrid pgvector retrieval, cross-encoder reranking, cited answers, RAGAS evaluations." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="static/app.css" />
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('fr-theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="bar">
+  <div class="wrap bar-inner">
+    <a class="brand" href="./">Filings RAG</a>
+    <nav aria-label="Views" class="tabs" role="tablist">
+      <button role="tab" id="tab-ask" aria-selected="true" aria-controls="view-ask">Ask</button>
+      <button role="tab" id="tab-evals" aria-selected="false" aria-controls="view-evals">Evaluations</button>
+    </nav>
+    <button class="icon-btn" id="theme" type="button" aria-label="Switch theme">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <section id="view-ask" role="tabpanel" aria-labelledby="tab-ask">
+    <h1>Ask the 10-K filings</h1>
+    <p class="lead">Answers come only from the companies' latest annual reports, with every sentence cited to the
+      section it came from.</p>
+    <p id="static-note" class="notice" hidden></p>
+
+    <form id="ask-form" class="ask">
+      <label for="q" class="sr-only">Your question</label>
+      <textarea id="q" rows="2" maxlength="500" placeholder="e.g. How does Bank of America describe its cybersecurity risk management?" required></textarea>
+      <div class="controls">
+        <fieldset class="tickers" aria-describedby="tick-help">
+          <legend>Companies</legend>
+          <div id="tickers" class="chips"></div>
+          <p id="tick-help" class="help">None selected searches all of them.</p>
+        </fieldset>
+        <div class="row">
+          <label for="mode">Retrieval</label>
+          <select id="mode">
+            <option value="hybrid_rerank">Hybrid + rerank</option>
+            <option value="hybrid">Hybrid (vector + keyword)</option>
+            <option value="vector">Vector only</option>
+            <option value="keyword">Keyword only</option>
+          </select>
+          <button type="submit" class="primary" id="ask-btn">Ask</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="examples" aria-label="Example questions">
+      <button type="button" class="ex">What cybersecurity risks does JPMorgan describe?</button>
+      <button type="button" class="ex">How did NVIDIA's data center revenue change, and why?</button>
+      <button type="button" class="ex">What does Apple say about supply chain concentration?</button>
+      <button type="button" class="ex">How sensitive is Bank of America's net interest income to rate changes?</button>
+    </div>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <article id="answer" class="answer" hidden>
+      <div id="answer-text" class="answer-text"></div>
+      <h2 class="h-small">Sources</h2>
+      <ol id="sources" class="sources"></ol>
+      <p id="meta" class="meta"></p>
+    </article>
+  </section>
+
+  <section id="view-evals" role="tabpanel" aria-labelledby="tab-evals" hidden>
+    <h1>How well it works</h1>
+    <p class="lead">Measured on a fixed set of questions with known answer sections, so changes to retrieval can be
+      compared run to run.</p>
+    <div id="evals"></div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Data: SEC EDGAR 10-K filings. Not investment advice. Built by
+    <a href="https://howardguoui.github.io/howardreactmainpage/">Howard Guo</a> ·
+    <a href="https://github.com/howardguoui/filings-rag">Source on GitHub</a></p>
+</footer>
+<script src="static/app.js"></script>
+</body>
+</html>
