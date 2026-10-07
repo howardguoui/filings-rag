@@ -87,3 +87,53 @@ def test_check_judged_fails_when_nothing_was_scored():
     with pytest.raises(RuntimeError, match="boom"):
         ev.check_judged(rows)
     ev.check_judged([{"faithfulness": 0.9, "answer_relevancy": None, "context_precision": None}])
+
+
+def test_openai_compatible_judge_and_llm_send_room_to_think():
+    """A thinking model on Ollama/vLLM needs a larger output limit, or answers and judge verdicts are cut off."""
+    pytest.importorskip("ragas")
+    from openai import OpenAI
+    from pydantic import BaseModel
+
+    import evals.run_evals as ev
+    from filings_rag.config import Settings
+    from filings_rag.llm import OpenAICompatibleLLM
+
+    sent = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(400, json={"error": {"message": "x"}})
+
+    import openai
+
+    real = openai.AsyncOpenAI
+
+    class Patched(real):
+        def __init__(self, **kw):
+            super().__init__(**kw, http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)), max_retries=0)
+
+    openai.AsyncOpenAI = Patched
+    try:
+        judge = ev.make_judge(Settings(judge_max_tokens=8192), "ollama")
+    finally:
+        openai.AsyncOpenAI = real
+
+    class Verdict(BaseModel):
+        ok: bool
+
+    with pytest.raises(Exception) as err:
+        asyncio.run(judge.agenerate("Is the sky blue?", Verdict))
+    assert not isinstance(err.value, TypeError), err.value
+    assert sent and sent[0].get("max_tokens") == 8192
+
+    llm = OpenAICompatibleLLM("http://x/v1", "qwen3:8b", "ollama", reasoning_tokens=3072)
+    llm.client = OpenAI(
+        base_url="http://x/v1",
+        api_key="k",
+        max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(openai.BadRequestError):
+        llm.generate("sys", "user", 700)
+    assert sent[-1]["max_tokens"] == 700 + 3072

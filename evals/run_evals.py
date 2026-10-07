@@ -167,7 +167,14 @@ def make_judge(settings: Settings, provider: str):
         if provider == "ollama"
         else (settings.vllm_base_url, settings.vllm_model)
     )
-    return llm_factory(model, provider="openai", client=AsyncOpenAI(base_url=base, api_key="not-needed"))
+    # A thinking judge (qwen3) spends tokens before its JSON; at RAGAS's default limit 26 of 32
+    # faithfulness calls in the 2026-10-07 run ended mid-output (IncompleteOutputException).
+    return llm_factory(
+        model,
+        provider="openai",
+        client=AsyncOpenAI(base_url=base, api_key="not-needed"),
+        max_tokens=settings.judge_max_tokens,
+    )
 
 
 async def _score_answers(rows: list[dict], judge, embeddings) -> None:
@@ -251,6 +258,9 @@ def generation_metrics(
         "model": llm.name,
         "judge": f"{judge_name}:{judge_label}" if judge_name else None,
         "mode": mode,
+        "scored": {m: sum(r.get(m) is not None for r in answerable) for m in JUDGED} if judge_name else None,
+        "n_answerable": len(answerable),
+        "empty_answers": sum(not r["answer"].strip() for r in rows),
         "faithfulness": mean("faithfulness"),
         "answer_relevancy": mean("answer_relevancy"),
         "context_precision": mean("context_precision"),
@@ -292,7 +302,8 @@ def write_report(result: dict) -> Path:
     g = result.get("generation")
     if g:
         judged = f"judged by {g['judge']}" if g["judge"] else "not judged: pass --judge for RAGAS scores"
-        lines += ["", f"## Answers ({g['model']}, {judged})", "", "| Metric | Score |", "| --- | --- |"]
+        scored = g.get("scored") or {}
+        lines += ["", f"## Answers ({g['model']}, {judged})", "", "| Metric | Score | Scored |", "| --- | --- | --- |"]
         for name in (
             "faithfulness",
             "answer_relevancy",
@@ -301,7 +312,11 @@ def write_report(result: dict) -> Path:
             "abstention_rate",
             "false_refusals",
         ):
-            lines.append(f"| {name.replace('_', ' ')} | {pct(g[name])} |")
+            # A judge that fails on some answers leaves a mean over fewer of them; show how many it covers.
+            n = f"{scored[name]}/{g['n_answerable']}" if name in scored and g.get("n_answerable") else ""
+            lines.append(f"| {name.replace('_', ' ')} | {pct(g[name])} | {n} |")
+        if g.get("empty_answers"):
+            lines.append(f"\n{g['empty_answers']} answer(s) came back empty.")
     path = RESULTS / "latest.md"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path

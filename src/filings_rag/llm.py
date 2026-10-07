@@ -60,18 +60,19 @@ class AnthropicLLM:
 class OpenAICompatibleLLM:
     """Works with Ollama (http://localhost:11434/v1) and vLLM (http://localhost:8000/v1)."""
 
-    def __init__(self, base_url: str, model: str, label: str):
+    def __init__(self, base_url: str, model: str, label: str, reasoning_tokens: int = 0):
         from openai import OpenAI
 
         self.client = OpenAI(base_url=base_url, api_key="not-needed")
         self.name = model
         self.label = label
+        self.reasoning_tokens = reasoning_tokens  # added to max_tokens: room for a reasoning model to think
 
     def generate(self, system: str, user: str, max_tokens: int) -> Generation:
         t0 = time.perf_counter()
         resp = self.client.chat.completions.create(
             model=self.name,
-            max_tokens=max_tokens,
+            max_tokens=max_tokens + self.reasoning_tokens,
             temperature=0,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         )
@@ -109,7 +110,9 @@ def make_llm(settings: Settings, provider: str | None = None) -> LLM:
     if p == "anthropic":
         return AnthropicLLM(settings.anthropic_api_key, settings.anthropic_model)
     if p == "ollama":
-        return OpenAICompatibleLLM(settings.ollama_base_url.rstrip("/") + "/v1", settings.ollama_model, "ollama")
+        return OpenAICompatibleLLM(
+            settings.ollama_base_url.rstrip("/") + "/v1", settings.ollama_model, "ollama", settings.reasoning_tokens
+        )
     if p == "vllm":
-        return OpenAICompatibleLLM(settings.vllm_base_url, settings.vllm_model, "vllm")
+        return OpenAICompatibleLLM(settings.vllm_base_url, settings.vllm_model, "vllm", settings.reasoning_tokens)
     return FakeLLM()

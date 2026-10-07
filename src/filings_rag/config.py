@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     vllm_base_url: str = "http://localhost:8000/v1"
     vllm_model: str = "Qwen/Qwen2.5-7B-Instruct-AWQ"
     max_answer_tokens: int = 700
+    # Extra output room for local reasoning models (qwen3, deepseek-r1) on Ollama or vLLM: they think
+    # before answering, and the thinking counts against max_tokens. Without it an answer can come back
+    # empty because the budget ran out mid-thought.
+    reasoning_tokens: int = 3072
+    # Output limit for the RAGAS judge on Ollama or vLLM; RAGAS's own default is too small for a thinking judge.
+    judge_max_tokens: int = 8192
 
     # Retrieval defaults
     retrieval_mode: RetrievalMode = "hybrid_rerank"

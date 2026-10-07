@@ -91,7 +91,38 @@ def test_report_formats_generation_block(tmp_path, monkeypatch):
         },
     }
     text = write_report(result).read_text()
-    assert "| faithfulness | 90% |" in text and "| answer relevancy | – |" in text
+    assert "| faithfulness | 90% |  |" in text and "| answer relevancy | – |  |" in text
+
+
+def test_report_shows_how_many_answers_the_judge_scored(tmp_path, monkeypatch):
+    from evals import run_evals
+    from evals.run_evals import write_report
+
+    monkeypatch.setattr(run_evals, "RESULTS", tmp_path)
+    result = {
+        "run_at": "2026-10-07 17:00 UTC",
+        "n_questions": 36,
+        "k": 6,
+        "embed_model": "m",
+        "retrieval": {"hybrid": {"hit_rate": 0.84, "mrr": 0.83, "median_ms": 12.0, "per_question": []}},
+        "generation": {
+            "model": "qwen3:8b",
+            "judge": "ollama:qwen3:8b",
+            "n_answerable": 32,
+            "empty_answers": 2,
+            "scored": {"faithfulness": 6, "answer_relevancy": 25, "context_precision": 24},
+            "faithfulness": 0.92,
+            "answer_relevancy": 0.91,
+            "context_precision": 0.84,
+            "citation_rate": 0.81,
+            "abstention_rate": 1.0,
+            "false_refusals": 0.0,
+        },
+    }
+    text = write_report(result).read_text(encoding="utf-8")
+    assert "| faithfulness | 92% | 6/32 |" in text
+    assert "| citation rate | 81% |  |" in text
+    assert "2 answer(s) came back empty." in text
 
 
 def test_expected_random_matches_simple_cases():
