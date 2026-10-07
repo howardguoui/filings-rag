@@ -1,0 +1,1088 @@
+{
+  "run_at": "2026-10-07 00:11 UTC",
+  "n_questions": 32,
+  "k": 6,
+  "embed_model": "BAAI/bge-small-en-v1.5",
+  "retrieval": {
+    "vector": {
+      "hit_rate": 0.84375,
+      "mrr": 0.8229166666666666,
+      "median_ms": 9.5,
+      "per_question": [
+        {
+          "id": "aapl-supply-chain",
+          "rank": 1
+        },
+        {
+          "id": "nvda-export-controls",
+          "rank": 1
+        },
+        {
+          "id": "tsla-key-person",
+          "rank": 1
+        },
+        {
+          "id": "amzn-competition-risk",
+          "rank": 1
+        },
+        {
+          "id": "msft-ai-risk",
+          "rank": 1
+        },
+        {
+          "id": "gs-credit-risk-factor",
+          "rank": 1
+        },
+        {
+          "id": "jpm-cyber",
+          "rank": null
+        },
+        {
+          "id": "bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "msft-cyber",
+          "rank": 1
+        },
+        {
+          "id": "aapl-segments",
+          "rank": 1
+        },
+        {
+          "id": "msft-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-employees",
+          "rank": 3
+        },
+        {
+          "id": "nvda-markets",
+          "rank": 1
+        },
+        {
+          "id": "bac-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-factories",
+          "rank": 1
+        },
+        {
+          "id": "aapl-legal",
+          "rank": 1
+        },
+        {
+          "id": "aapl-buybacks",
+          "rank": 1
+        },
+        {
+          "id": "jpm-stock-market",
+          "rank": null
+        },
+        {
+          "id": "nvda-datacenter",
+          "rank": 1
+        },
+        {
+          "id": "amzn-aws",
+          "rank": 1
+        },
+        {
+          "id": "tsla-gross-margin",
+          "rank": 1
+        },
+        {
+          "id": "msft-cloud-revenue",
+          "rank": 1
+        },
+        {
+          "id": "gs-revenue-drivers",
+          "rank": 1
+        },
+        {
+          "id": "bac-rate-sensitivity",
+          "rank": 1
+        },
+        {
+          "id": "aapl-fx-risk",
+          "rank": 1
+        },
+        {
+          "id": "jpm-var",
+          "rank": null
+        },
+        {
+          "id": "msft-income-tax",
+          "rank": 1
+        },
+        {
+          "id": "amzn-controls",
+          "rank": 1
+        },
+        {
+          "id": "x-bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "x-tsla-musk",
+          "rank": 1
+        },
+        {
+          "id": "x-nvda-china",
+          "rank": 1
+        },
+        {
+          "id": "x-aws",
+          "rank": 1
+        }
+      ]
+    },
+    "keyword": {
+      "hit_rate": 0.8125,
+      "mrr": 0.7510416666666667,
+      "median_ms": 3.75,
+      "per_question": [
+        {
+          "id": "aapl-supply-chain",
+          "rank": 1
+        },
+        {
+          "id": "nvda-export-controls",
+          "rank": 1
+        },
+        {
+          "id": "tsla-key-person",
+          "rank": 2
+        },
+        {
+          "id": "amzn-competition-risk",
+          "rank": 1
+        },
+        {
+          "id": "msft-ai-risk",
+          "rank": 1
+        },
+        {
+          "id": "gs-credit-risk-factor",
+          "rank": 1
+        },
+        {
+          "id": "jpm-cyber",
+          "rank": null
+        },
+        {
+          "id": "bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "msft-cyber",
+          "rank": 1
+        },
+        {
+          "id": "aapl-segments",
+          "rank": 1
+        },
+        {
+          "id": "msft-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-employees",
+          "rank": 5
+        },
+        {
+          "id": "nvda-markets",
+          "rank": 1
+        },
+        {
+          "id": "bac-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-factories",
+          "rank": 1
+        },
+        {
+          "id": "aapl-legal",
+          "rank": 3
+        },
+        {
+          "id": "aapl-buybacks",
+          "rank": 1
+        },
+        {
+          "id": "jpm-stock-market",
+          "rank": null
+        },
+        {
+          "id": "nvda-datacenter",
+          "rank": 1
+        },
+        {
+          "id": "amzn-aws",
+          "rank": 1
+        },
+        {
+          "id": "tsla-gross-margin",
+          "rank": 1
+        },
+        {
+          "id": "msft-cloud-revenue",
+          "rank": 1
+        },
+        {
+          "id": "gs-revenue-drivers",
+          "rank": 1
+        },
+        {
+          "id": "bac-rate-sensitivity",
+          "rank": 1
+        },
+        {
+          "id": "aapl-fx-risk",
+          "rank": 1
+        },
+        {
+          "id": "jpm-var",
+          "rank": null
+        },
+        {
+          "id": "msft-income-tax",
+          "rank": 1
+        },
+        {
+          "id": "amzn-controls",
+          "rank": 1
+        },
+        {
+          "id": "x-bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "x-tsla-musk",
+          "rank": null
+        },
+        {
+          "id": "x-nvda-china",
+          "rank": 1
+        },
+        {
+          "id": "x-aws",
+          "rank": 1
+        }
+      ]
+    },
+    "hybrid": {
+      "hit_rate": 0.84375,
+      "mrr": 0.828125,
+      "median_ms": 11.8,
+      "per_question": [
+        {
+          "id": "aapl-supply-chain",
+          "rank": 1
+        },
+        {
+          "id": "nvda-export-controls",
+          "rank": 1
+        },
+        {
+          "id": "tsla-key-person",
+          "rank": 1
+        },
+        {
+          "id": "amzn-competition-risk",
+          "rank": 1
+        },
+        {
+          "id": "msft-ai-risk",
+          "rank": 1
+        },
+        {
+          "id": "gs-credit-risk-factor",
+          "rank": 1
+        },
+        {
+          "id": "jpm-cyber",
+          "rank": null
+        },
+        {
+          "id": "bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "msft-cyber",
+          "rank": 1
+        },
+        {
+          "id": "aapl-segments",
+          "rank": 1
+        },
+        {
+          "id": "msft-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-employees",
+          "rank": 1
+        },
+        {
+          "id": "nvda-markets",
+          "rank": 1
+        },
+        {
+          "id": "bac-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-factories",
+          "rank": 1
+        },
+        {
+          "id": "aapl-legal",
+          "rank": 1
+        },
+        {
+          "id": "aapl-buybacks",
+          "rank": 1
+        },
+        {
+          "id": "jpm-stock-market",
+          "rank": null
+        },
+        {
+          "id": "nvda-datacenter",
+          "rank": 1
+        },
+        {
+          "id": "amzn-aws",
+          "rank": 1
+        },
+        {
+          "id": "tsla-gross-margin",
+          "rank": 1
+        },
+        {
+          "id": "msft-cloud-revenue",
+          "rank": 1
+        },
+        {
+          "id": "gs-revenue-drivers",
+          "rank": 1
+        },
+        {
+          "id": "bac-rate-sensitivity",
+          "rank": 1
+        },
+        {
+          "id": "aapl-fx-risk",
+          "rank": 1
+        },
+        {
+          "id": "jpm-var",
+          "rank": null
+        },
+        {
+          "id": "msft-income-tax",
+          "rank": 1
+        },
+        {
+          "id": "amzn-controls",
+          "rank": 1
+        },
+        {
+          "id": "x-bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "x-tsla-musk",
+          "rank": 2
+        },
+        {
+          "id": "x-nvda-china",
+          "rank": 1
+        },
+        {
+          "id": "x-aws",
+          "rank": 1
+        }
+      ]
+    },
+    "hybrid_rerank": {
+      "hit_rate": 0.84375,
+      "mrr": 0.81875,
+      "median_ms": 1762.15,
+      "per_question": [
+        {
+          "id": "aapl-supply-chain",
+          "rank": 1
+        },
+        {
+          "id": "nvda-export-controls",
+          "rank": 1
+        },
+        {
+          "id": "tsla-key-person",
+          "rank": 1
+        },
+        {
+          "id": "amzn-competition-risk",
+          "rank": 1
+        },
+        {
+          "id": "msft-ai-risk",
+          "rank": 1
+        },
+        {
+          "id": "gs-credit-risk-factor",
+          "rank": 1
+        },
+        {
+          "id": "jpm-cyber",
+          "rank": null
+        },
+        {
+          "id": "bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "msft-cyber",
+          "rank": 1
+        },
+        {
+          "id": "aapl-segments",
+          "rank": 1
+        },
+        {
+          "id": "msft-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-employees",
+          "rank": 5
+        },
+        {
+          "id": "nvda-markets",
+          "rank": 1
+        },
+        {
+          "id": "bac-segments",
+          "rank": 1
+        },
+        {
+          "id": "tsla-factories",
+          "rank": 1
+        },
+        {
+          "id": "aapl-legal",
+          "rank": 1
+        },
+        {
+          "id": "aapl-buybacks",
+          "rank": 1
+        },
+        {
+          "id": "jpm-stock-market",
+          "rank": null
+        },
+        {
+          "id": "nvda-datacenter",
+          "rank": 1
+        },
+        {
+          "id": "amzn-aws",
+          "rank": 1
+        },
+        {
+          "id": "tsla-gross-margin",
+          "rank": 1
+        },
+        {
+          "id": "msft-cloud-revenue",
+          "rank": 1
+        },
+        {
+          "id": "gs-revenue-drivers",
+          "rank": 1
+        },
+        {
+          "id": "bac-rate-sensitivity",
+          "rank": 1
+        },
+        {
+          "id": "aapl-fx-risk",
+          "rank": 1
+        },
+        {
+          "id": "jpm-var",
+          "rank": null
+        },
+        {
+          "id": "msft-income-tax",
+          "rank": 1
+        },
+        {
+          "id": "amzn-controls",
+          "rank": 1
+        },
+        {
+          "id": "x-bac-cyber",
+          "rank": null
+        },
+        {
+          "id": "x-tsla-musk",
+          "rank": 1
+        },
+        {
+          "id": "x-nvda-china",
+          "rank": 1
+        },
+        {
+          "id": "x-aws",
+          "rank": 1
+        }
+      ]
+    }
+  },
+  "baseline": {
+    "hit_rate": 0.6253037101309324,
+    "mrr": 0.3895847891689836,
+    "median_ms": 0.0,
+    "per_question": [],
+    "baseline": true
+  },
+  "generation": {
+    "model": "qwen3:8b",
+    "judge": "ollama:qwen3:8b",
+    "mode": "hybrid",
+    "faithfulness": 0.9166666666666666,
+    "answer_relevancy": 0.9143883271941973,
+    "context_precision": 0.8409490740505353,
+    "citation_rate": 0.8125,
+    "false_refusals": 0.0,
+    "abstention_rate": 1.0,
+    "median_answer_ms": 10300.25,
+    "rows": [
+      {
+        "id": "aapl-supply-chain",
+        "question": "What risks does Apple describe about depending on outsourcing partners and single-source suppliers?",
+        "answer": "Apple identifies several risks from relying on outsourcing partners and single-source suppliers:  \n1. Reduced direct control over production and distribution, risking cost, quality, or quantity issues [1].  \n2. Exposure to product defect liabilities and supplier code of conduct violations, which can harm reputation and financials [1][2].  \n3. Supply and pricing risks due to reliance on single or limited sources, exacerbated by industry-wide shortages and commodity price fluctuations [2][5].  \n4. Potential disruptions from supplier failures, consolidation, or shifts to common components, limiting access to custom parts [5].  \n5. Vulnerability to global economic conditions and trade restrictions, affecting supplier stability and component availability [6].  \n6. Increased complexity and risks in managing a large, geographically dispersed supply chain [4].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 16623.5,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9705231573042824,
+        "context_precision": 0.9999999999833333
+      },
+      {
+        "id": "nvda-export-controls",
+        "question": "How do U.S. export controls affect NVIDIA's ability to sell products in China?",
+        "answer": "U.S. export controls restrict NVIDIA's ability to sell products in China by limiting exports of GPUs and related technologies, leading to reduced demand and competitive disadvantages [1][2]. These controls have encouraged Chinese customers to \"design-out\" U.S. semiconductors, and export restrictions on data center GPUs and networking products (e.g., high-speed interconnects) further hinder sales [1][3]. China\u2019s antitrust regulators have criticized NVIDIA\u2019s compliance with U.S. export controls, alleging unfair treatment of Chinese customers, which could result in",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 13902.2,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9775285543730905,
+        "context_precision": 0.9999999999833333
+      },
+      {
+        "id": "tsla-key-person",
+        "question": "What risk does Tesla describe about depending on Elon Musk?",
+        "answer": "Tesla identifies several risks related to its dependence on Elon Musk:  \n1. Musk\u2019s divided attention due to his roles at other companies (e.g., SpaceX, Neuralink) may limit his focus on Tesla [1][2].  \n2. His lack of a long-term employment agreement creates uncertainty about his continued service [2].  \n3. Potential forced sales of Tesla shares to meet personal loan obligations could harm the stock price [3][5].  \n4. Misalignment of his strategic initiatives (e.g., 2025 CEO Performance Award) with consumer demand could lead to financial losses or strategic errors [5].  \n5. Negative perceptions of Musk\u2019s leadership may damage Tesla\u2019s brand and investor confidence [6].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 9219.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.886397025902505,
+        "context_precision": 0.8333333333055556
+      },
+      {
+        "id": "amzn-competition-risk",
+        "question": "What competitive risks does Amazon say it faces?",
+        "answer": "Amazon identifies several competitive risks, including intense competition across geographies and industries such as e-commerce, web and infrastructure computing services, and logistics [1]. It faces rivals with greater resources, brand recognition, and established customer bases, particularly in newer markets and with its emerging products [1]. Competition is exacerbated by technological advancements like AI, new business models, and the entry of well-funded competitors, which may adopt aggressive pricing or invest more in technology and marketing [1]. Additionally, Amazon warns that its expansion into new products, services, and regions could lead to failure to gain or lose business due to competitive pressures [1].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 7585.9,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9432076112350268,
+        "context_precision": 0.8099999999838
+      },
+      {
+        "id": "msft-ai-risk",
+        "question": "What risks does Microsoft identify related to its development and use of AI?",
+        "answer": "Microsoft identifies several risks related to AI development and use, including:  \n1. Legal liability, regulatory action, and reputational harm from AI flaws, biased data, or harmful content generated by AI systems [1].  \n2. Ethical concerns and societal impacts, such as uneven effects on vulnerable groups or misuse of AI technologies [5].  \n3. Reputational and competitive harm from AI solutions producing unintended consequences or being used in ways inconsistent with responsible AI practices [5].  \n4. Challenges in ensuring human oversight, preventing over-reliance on AI, and managing risks from evolving global regulations [1][5].  \n5. Potential for AI systems to fail, leading to harm to individuals, customers, or society, or disrupting service acceptance [1].  \nThese risks are compounded by the complexity of AI development and the rapid pace of regulatory and technological changes",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14219.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9792407273368017,
+        "context_precision": 0.6999999999766667
+      },
+      {
+        "id": "gs-credit-risk-factor",
+        "question": "How does Goldman Sachs describe its exposure to credit risk from counterparties?",
+        "answer": "Goldman Sachs describes its credit risk exposure to counterparties as arising primarily from client transactions in OTC derivatives, loans, and lending commitments, as well as cash placed with banks and securities financing transactions [2]. Credit risk is managed through a framework that includes monitoring credit limits, assessing default likelihood, measuring current and potential exposures, and using mitigants like collateral, netting agreements, and third-party guarantees [1][4]. Exposure is quantified based on potential loss from non-payment, with distinctions between current exposure (amounts owed after netting/collateral) and potential exposure (estimated future losses under market stress) [5]. The firm also conducts stress tests to evaluate impacts from credit rating shocks and market disruptions [5].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 11306.4,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.8626601886979616,
+        "context_precision": null,
+        "errors": [
+          "context_precision: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ]
+      },
+      {
+        "id": "jpm-cyber",
+        "question": "How does JPMorgan Chase manage and govern cybersecurity risk?",
+        "answer": "JPMorgan Chase manages cybersecurity risk through a structured governance framework, including the Cybersecurity and Technology Controls Operating Committee (CTOC) [3], which oversees implementation of controls and escalates risks to senior committees. The Global Chief Information Security Officer (CISO), reporting to the Global Chief Information Officer, leads the Information Security Program, which includes cybersecurity operations centers, training, and incident response planning [2]. Cybersecurity risk management is integrated into operational risk frameworks, with",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14109.0,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9864079141498515,
+        "context_precision": 0.999999999975
+      },
+      {
+        "id": "bac-cyber",
+        "question": "Who oversees cybersecurity risk at Bank of America and how is it reported to the board?",
+        "answer": "The Board of Directors and its Enterprise Risk Committee (ERC) oversee cybersecurity risk at Bank of America [1][5]. The Board receives regular presentations, memoranda, and reports from the Chief Technology and Information Officer (CTIO) and Chief Information Security Officer (CISO) on cybersecurity developments, threats, and risks [1][5]. The ERC reviews cybersecurity risk and is responsible for approving the GIS Program and Information Security Policy [1]. The Board also gets quarterly reports on cybersecurity risk metrics, performance of the GIS Program, and is notified promptly if a Board-level cybersecurity risk limit is breached [1]. The CISO oversees a team of over 3,400 information security professionals globally [1][2].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 10633.5,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9618534396355628,
+        "context_precision": 0.99999999998
+      },
+      {
+        "id": "msft-cyber",
+        "question": "Describe Microsoft's process for assessing and managing material risks from cybersecurity threats.",
+        "answer": "Microsoft assesses and manages cybersecurity risks through a structured framework, including semiannual risk assessments by the Enterprise Risk Management (ERM) organization aligned with ISO 31000:2018 [1][3]. The Secure Future Initiative (SFI) guides continuous improvement in cybersecurity protection [3]. Cybersecurity is integrated into product development via the Security Development Lifecycle (SDL) and zero-trust architecture [1][3]. Third-party risks are managed through contractual requirements, cybersecurity reviews, and coordinated vulnerability disclosure programs [1][5]. Incident response involves triage, severity assessment, internal/external notifications, and post-incident reviews [5]. The Cybersecurity Governance Council (CGC) oversees risk assessments, approves mitigation strategies, and ensures regulatory compliance [4]. The Board of Directors reviews cybersecurity risks quarterly, with presentations from senior leaders including the CISO [6].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 12135.5,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.8970429128817791,
+        "context_precision": 0.7555555555303703
+      },
+      {
+        "id": "aapl-segments",
+        "question": "What are Apple's reportable segments?",
+        "answer": "Apple\u2019s reportable segments are the Americas, Europe, Greater China, Japan, and Rest of Asia Pacific [1][2]. These segments are managed separately to align with regional market dynamics, customer locations, and distribution partners [1].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 6397.9,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9982435621789071,
+        "context_precision": 0.8333333333055556
+      },
+      {
+        "id": "msft-segments",
+        "question": "What business segments does Microsoft report?",
+        "answer": "Microsoft reports three business segments: **Productivity and Business Processes**, **Intelligent Cloud**, and **More Personal Computing** [1][4][5]. These segments are described in detail in the 10-K filings, with additional segment information provided in Note 18 of the Notes to Financial Statements [1][4].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 5499.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.8771955710344947,
+        "context_precision": 0.8766666666491334
+      },
+      {
+        "id": "tsla-employees",
+        "question": "How many full-time employees did Tesla have at year end?",
+        "answer": "Tesla had 134,785 employees worldwide as of December 31, 2025 [1]. The filings do not specify the number of full-time employees separately.",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 6767.6,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.8324841606605581,
+        "context_precision": 0.0
+      },
+      {
+        "id": "nvda-markets",
+        "question": "What markets does NVIDIA serve with its platforms?",
+        "answer": "NVIDIA serves four primary markets with its platforms:  \n1. **Data Center**: Focuses on accelerating AI, data processing, and high-performance computing (HPC) workloads, deployed in cloud, hyperscale, and edge environments [1][4].  \n2. **Gaming**: Provides GPUs for immersive gaming, live streaming, and AI-driven applications, with technologies like DLSS and GeForce NOW [1][5].  \n3. **Professional Visualization**: Supports creative and engineering workflows via NVIDIA RTX PRO GPUs and software, enabling tasks like 3D design and simulation [1][3][5].  \n4. **Automotive**: Offers solutions for autonomous driving (e.g., DRIVE Hyperion platform) and electric vehicles, integrating AI, sensors, and software for self-driving capabilities [1][2][5].  \n\nThese markets are addressed through NVIDIA\u2019s unified accelerated computing platform, leveraging GPUs, CPUs, and software stacks [2][6].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 8883.2,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.927454045224882,
+        "context_precision": 0.9999999999833333
+      },
+      {
+        "id": "bac-segments",
+        "question": "What are Bank of America's business segments?",
+        "answer": "Bank of America's business segments are **Consumer Banking**, **Global Wealth & Investment Management (GWIM)**, **Global Banking**, **Global Markets**, and **All Other** [1][2][4][6]. The four primary segments (Consumer Banking, GWIM, Global Banking, and Global Markets) are described in detail, with remaining operations classified under \"All Other\" [1][2][4].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 5159.5,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9937786153052336,
+        "context_precision": 0.8541666666453125
+      },
+      {
+        "id": "tsla-factories",
+        "question": "Where are Tesla's main manufacturing facilities located?",
+        "answer": "Tesla's main manufacturing facilities are located in Austin, Texas [1]; Fremont, California [1]; Sparks, Nevada [1]; Grunheide, Germany [1]; Shanghai, China [1]; and Buffalo, New York [1]. Additional leased facilities include Lathrop, California [1], and the table notes that Shanghai's facilities involve land use rights with a 50-year term [1].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 11756.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9999999999999994,
+        "context_precision": 0.99999999995
+      },
+      {
+        "id": "aapl-legal",
+        "question": "What legal proceedings does Apple disclose?",
+        "answer": "Apple discloses several legal proceedings, including:  \n1. A criminal contempt proceeding in the Northern District of California, with an appeal to the Ninth Circuit Court [1].  \n2. EU Digital Markets Act (DMA) investigations, including a \u20ac500 million fine and appeal under Article 5(4), and preliminary findings under Article 6(4) [5].  \n3. Ongoing patent claims related to standards-enabled products and potential novel claims from intellectual property holders [2].  \n4. Other unresolved legal proceedings and government investigations in the ordinary course of business, with uncertain outcomes [1][3].  \n5. Risks from data privacy laws and potential penalties for noncompliance with personal data regulations [4].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 11350.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit.",
+          "context_precision: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.8831600478256424,
+        "context_precision": null
+      },
+      {
+        "id": "aapl-buybacks",
+        "question": "How much stock did Apple repurchase in the fourth quarter of the fiscal year?",
+        "answer": "",
+        "cited": false,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14641.6,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: ValueError: response is missing. Please add response to the test sample.",
+          "answer_relevancy: ValueError: response cannot be empty",
+          "context_precision: ValueError: response cannot be empty"
+        ],
+        "answer_relevancy": null,
+        "context_precision": null
+      },
+      {
+        "id": "jpm-stock-market",
+        "question": "On which exchange is JPMorgan Chase common stock listed?",
+        "answer": "JPMorgan Chase common stock is listed on The New York Stock Exchange (NYSE) [1]. The trading symbol is JPM [4].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 6837.1,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9403977721239997,
+        "context_precision": 0.7499999999625
+      },
+      {
+        "id": "nvda-datacenter",
+        "question": "How did NVIDIA's Data Center revenue change during the year and what drove it?",
+        "answer": "",
+        "cited": false,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14449.4,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: ValueError: response is missing. Please add response to the test sample.",
+          "answer_relevancy: ValueError: response cannot be empty",
+          "context_precision: ValueError: response cannot be empty"
+        ],
+        "answer_relevancy": null,
+        "context_precision": null
+      },
+      {
+        "id": "amzn-aws",
+        "question": "How did AWS segment sales and operating income change compared with the prior year?",
+        "answer": "",
+        "cited": false,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14948.7,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: ValueError: response is missing. Please add response to the test sample.",
+          "answer_relevancy: ValueError: response cannot be empty",
+          "context_precision: ValueError: response cannot be empty"
+        ],
+        "answer_relevancy": null,
+        "context_precision": null
+      },
+      {
+        "id": "tsla-gross-margin",
+        "question": "What drove changes in Tesla's automotive gross margin?",
+        "answer": "The decrease in Tesla's automotive gross margin from 18.4% to 17.8% in 2025 compared to 2024 was driven by:  \n1. A decline in automotive regulatory credits revenue, which fell $770 million or 28% [5].  \n2. Lower automotive sales revenue due to an 8% decrease in cash deliveries and a lower average selling price per unit [5].  \n3. Reduced cost of automotive sales revenue (down 9%) from lower deliveries and lower material costs, though partially offset by higher tariffs [3].  \nThese factors, combined with decreased regulatory credits revenue, contributed to the margin contraction [2][3].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 11364.5,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.8330614832121253,
+        "context_precision": 0.7555555555303703
+      },
+      {
+        "id": "msft-cloud-revenue",
+        "question": "How did Microsoft Cloud revenue grow during the fiscal year?",
+        "answer": "Microsoft Cloud revenue increased 27% to $214.4 billion during the fiscal year [1][2]. This growth includes Microsoft 365 Commercial cloud (17%), Azure and other cloud services (41%), and Dynamics 365 (18%) [2].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 11531.9,
+        "faithfulness": 0.5,
+        "answer_relevancy": null,
+        "errors": [
+          "answer_relevancy: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "context_precision": 0.999999999975
+      },
+      {
+        "id": "gs-revenue-drivers",
+        "question": "What drove changes in Goldman Sachs net revenues in Global Banking & Markets?",
+        "answer": "",
+        "cited": false,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14680.4,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: ValueError: response is missing. Please add response to the test sample.",
+          "answer_relevancy: ValueError: response cannot be empty",
+          "context_precision: ValueError: response cannot be empty"
+        ],
+        "answer_relevancy": null,
+        "context_precision": null
+      },
+      {
+        "id": "bac-rate-sensitivity",
+        "question": "How sensitive is Bank of America's net interest income to changes in interest rates?",
+        "answer": "Bank of America's net interest income is highly sensitive to interest rate changes, as interest rate risk is its most significant market risk exposure [1]. The bank uses forward-looking forecasts and scenario analysis to assess impacts, including non-linear effects from large rate shifts [2]. It is asset sensitive to parallel yield curve movements, with short-end rate changes driving most of the impact [5]. Higher rates could reduce Basel 3 capital via debt securities' fair value declines but may be offset by increased net interest income over time [5]. Prepayment behaviors and deposit pricing also create non-linear sensitivities, particularly with extreme rate movements [2].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 9182.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9291922707837492,
+        "context_precision": 0.9999999999833333
+      },
+      {
+        "id": "aapl-fx-risk",
+        "question": "How does Apple manage foreign currency exchange rate risk?",
+        "answer": "Apple manages foreign currency exchange rate risk through derivative instruments such as forwards, options, and cross-currency swaps, which are designated as cash flow or fair value hedges [2]. The company also adjusts local currency pricing and may offset exposures without hedging for accounting or cost reasons [1]. Additionally, it uses foreign currency forward contracts to hedge forecasted revenue and inventory purchases, typically for up to 12 months [2]. A value-at-risk (VAR) model with Monte Carlo simulation assesses potential losses, estimating a maximum one-day fair value decline of $590 million as of September 27, 2025 [1].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 7657.1,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9999999999999994,
+        "context_precision": 0.9166666666361111
+      },
+      {
+        "id": "jpm-var",
+        "question": "What is value-at-risk and how does JPMorgan use it to measure market risk?",
+        "answer": "Value-at-risk (VaR) is a statistical measure JPMorgan uses to estimate potential losses from adverse market moves. The Firm employs a single VaR framework based on historical simulation of the previous 12 months, assuming historical data represents future outcomes [2]. Risk Management VaR is calculated with a one-day holding period and a 95% confidence level, providing a daily risk measure aligned with risk management decisions [2]. VaR is used to assess risk profiles, diversification, and aggregate risks across product types, while also monitoring limits for businesses and reporting to senior management, the Board Risk Committee, and regulators [2][5]. However, VaR is noted as an imperfect measure due to reliance on historical data and limitations in predicting extreme market events [6].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 9922.0,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit.",
+          "answer_relevancy: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": null,
+        "context_precision": 0.9266666666481335
+      },
+      {
+        "id": "msft-income-tax",
+        "question": "What was Microsoft's effective tax rate for the fiscal year?",
+        "answer": "",
+        "cited": false,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 15023.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: ValueError: response is missing. Please add response to the test sample.",
+          "answer_relevancy: ValueError: response cannot be empty",
+          "context_precision: ValueError: response cannot be empty"
+        ],
+        "answer_relevancy": null,
+        "context_precision": null
+      },
+      {
+        "id": "amzn-controls",
+        "question": "Did Amazon's management conclude that its internal control over financial reporting was effective?",
+        "answer": "Yes, Amazon's management concluded that its internal control over financial reporting was effective. Management assessed the effectiveness of internal control over financial reporting as of December 31, 2025, and concluded it was effective in providing reasonable assurance regarding the reliability of financial reporting [2]. Ernst & Young, the independent auditor, also confirmed that Amazon maintained effective internal control over financial reporting in all material respects as of December 31, 2025, based on the COSO criteria [1][3].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 7184.1,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9055303902544306,
+        "context_precision": null,
+        "errors": [
+          "context_precision: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ]
+      },
+      {
+        "id": "x-bac-cyber",
+        "question": "How does Bank of America govern cybersecurity risk?",
+        "answer": "Bank of America governs cybersecurity risk through a structured approach involving senior executives, regular reporting, and integrated processes. The CISO and CTIO oversee cybersecurity, leading a global team of over 3,400 professionals [1][2]. The Board and its ERC receive regular updates, quarterly performance metrics, and prompt notifications of cybersecurity incidents or breaches [2]. Annual reviews of the GIS Program and Information Security Policy ensure alignment with regulatory requirements [2]. Cybersecurity is managed cross-functionally with Global Technology, Global Risk Management, Legal, and Corporate Audit collaborating [3]. The Corporation also employs 24/7 cyber operations centers and integrates cybersecurity into its broader risk framework [3].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 7720.8,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.9999999999999991,
+        "context_precision": 0.9999999999666667
+      },
+      {
+        "id": "x-tsla-musk",
+        "question": "What does Tesla say about the risk of losing Elon Musk's services?",
+        "answer": "Tesla states that it is \"highly dependent on the services of Elon Musk, Technoking of Tesla and our Chief Executive Officer\" [2], and the loss of his services could disrupt operations or delay product development. The company also notes that Musk may be forced to sell shares of Tesla stock if he cannot meet personal loan obligations or other commitments, which could negatively impact the stock price [4]. Additionally, Tesla highlights that key employees, including Musk, are not bound by long-term employment agreements, increasing the risk of losing critical leadership [2].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 9967.0,
+        "faithfulness": null,
+        "errors": [
+          "faithfulness: IncompleteOutputException: The output is incomplete due to a max_tokens length limit."
+        ],
+        "answer_relevancy": 0.7564684842332824,
+        "context_precision": 0.499999999975
+      },
+      {
+        "id": "x-nvda-china",
+        "question": "What does NVIDIA say about export restrictions on its data center GPUs to China?",
+        "answer": "NVIDIA states that U.S. export controls restrict its ability to sell data center GPUs to China and certain regions, impacting products like A100, H100, A800, H800, L4, L40, and others [5",
+        "cited": false,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 14167.5,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.80831188771131,
+        "context_precision": 0.8041666666465626
+      },
+      {
+        "id": "x-aws",
+        "question": "How did Amazon Web Services sales change year over year?",
+        "answer": "Amazon Web Services (AWS) sales increased 20% in 2025 compared to the prior year [1][2][3]. This growth primarily reflects increased customer usage, partially offset by pricing changes from long-term contracts [1]. AWS sales in 2025 were $128.725 billion, up from $107.556 billion in 2024 [5].",
+        "cited": true,
+        "abstained": false,
+        "unanswerable": false,
+        "latency_ms": 12347.7,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.709568357789457,
+        "context_precision": 0.8666666666377778
+      },
+      {
+        "id": "u-aapl-2040",
+        "question": "What revenue does Apple forecast for fiscal year 2040?",
+        "answer": "The filings provided do not contain this information.",
+        "cited": false,
+        "abstained": true,
+        "unanswerable": true,
+        "latency_ms": 5776.7
+      },
+      {
+        "id": "u-msft-cars",
+        "question": "How many cars did Microsoft sell last year?",
+        "answer": "The filings provided do not contain this information.",
+        "cited": false,
+        "abstained": true,
+        "unanswerable": true,
+        "latency_ms": 6794.7
+      },
+      {
+        "id": "u-jpm-ceo-favorite",
+        "question": "What is the favorite restaurant of JPMorgan's CEO?",
+        "answer": "The filings provided do not contain this information.",
+        "cited": false,
+        "abstained": true,
+        "unanswerable": true,
+        "latency_ms": 5936.9
+      },
+      {
+        "id": "u-nvda-grocery",
+        "question": "How many grocery stores does NVIDIA operate?",
+        "answer": "The filings provided do not contain this information.",
+        "cited": false,
+        "abstained": true,
+        "unanswerable": true,
+        "latency_ms": 5031.2
+      }
+    ]
+  }
+}
