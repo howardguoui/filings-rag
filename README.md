@@ -7,6 +7,9 @@ reranking, and an evaluation suite that measures retrieval and answer quality wi
 **Stack:** Python, FastAPI, PostgreSQL + pgvector, fastembed (ONNX),
 Claude API / Ollama / vLLM, RAGAS, Docker, GitHub Actions
 
+**Demo:** [howardguoui.github.io/filings-rag](https://howardguoui.github.io/filings-rag/) (free static copy with
+recorded answers; see [Free static demo](#free-static-demo-github-pages))
+
 ## How it works
 
 ```mermaid
@@ -50,6 +53,16 @@ answers it, and 4 unanswerable ones that test refusals.
 | Retrieval | Hit rate@6 (the right company and Item is retrieved) and MRR, for vector, keyword, hybrid and hybrid + rerank, next to the exact score of a random ranking under the same filters |
 | Answers (RAGAS, LLM judge) | Faithfulness, answer relevancy, context precision (no reference needed) |
 | Behavior | Citation rate, correct refusals on unanswerable questions, false refusals |
+
+**Latest run** ([evals/results/latest.md](evals/results/latest.md), 2026-10-07 on an RTX 5070 Ti, answers and
+grading by local qwen3:8b):
+
+- Retrieval: hybrid search reaches hit rate@6 **84%** and MRR **0.83**, against 63% and 0.39 for a random ranking.
+- Answers: faithfulness **97%** (scored on 30 of 32 answers), answer relevancy **91%**, context precision **89%**.
+- Behavior: every answer cited its sources, **4/4** unanswerable questions were refused, and no answerable question
+  was refused.
+
+The judge is the same 8B model that writes the answers, so a stronger judge would be a stricter test.
 
 Each run writes `evals/results/latest.md` and `latest.json`; the demo's Evaluations tab shows the latest run.
 Commit the results folder so the deployed demo shows them.

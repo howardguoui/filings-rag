@@ -5,8 +5,6 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 ## Next
 
-- [ ] **First published evaluation:** ingest the 8 demo companies, run retrieval + RAGAS, commit
-      `evals/results/latest.md`, and quote the headline numbers in the README.
 - [ ] **Live demo on Render** with the URL in the README.
 - [ ] **Streaming answers:** server-sent events from `/api/ask` so the page shows tokens as they arrive; measure
       time to first token alongside total latency.
@@ -24,5 +22,7 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 ## Shipped
 
+- 2026-10-07: first published evaluation (RTX 5070 Ti, local qwen3:8b answers and judge): hybrid hit rate@6 84% /
+  MRR 0.83 vs 63% / 0.39 random; faithfulness 97% (30/32 scored), answer relevancy 91%, context precision 89%.
 - 2026-10-06: hybrid pgvector + full-text retrieval with RRF and cross-encoder rerank, cited answers from Claude /
   Ollama / vLLM, RAGAS evaluation with an exact random baseline, FastAPI demo with rate limits, Render blueprint, CI.
