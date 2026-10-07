@@ -92,26 +92,27 @@ def test_check_judged_fails_when_nothing_was_scored():
 def test_openai_compatible_judge_and_llm_send_room_to_think():
     """A thinking model on Ollama/vLLM needs a larger output limit, or answers and judge verdicts are cut off."""
     pytest.importorskip("ragas")
-    from openai import OpenAI
+    import openai
+    from openai import OpenAI, _base_client
     from pydantic import BaseModel
 
     import evals.run_evals as ev
     from filings_rag.config import Settings
     from filings_rag.llm import OpenAICompatibleLLM
 
+    # the HTTP library this openai version was built on: httpx (openai 1.x) or httpx2 (newer)
+    hx = getattr(_base_client, "httpx2", None) or _base_client.httpx
     sent = []
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request):
         sent.append(json.loads(request.content))
-        return httpx.Response(400, json={"error": {"message": "x"}})
-
-    import openai
+        return hx.Response(400, json={"error": {"message": "x"}})
 
     real = openai.AsyncOpenAI
 
     class Patched(real):
         def __init__(self, **kw):
-            super().__init__(**kw, http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)), max_retries=0)
+            super().__init__(**kw, http_client=hx.AsyncClient(transport=hx.MockTransport(handler)), max_retries=0)
 
     openai.AsyncOpenAI = Patched
     try:
@@ -132,7 +133,7 @@ def test_openai_compatible_judge_and_llm_send_room_to_think():
         base_url="http://x/v1",
         api_key="k",
         max_retries=0,
-        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        http_client=hx.Client(transport=hx.MockTransport(handler)),
     )
     with pytest.raises(openai.BadRequestError):
         llm.generate("sys", "user", 700)
