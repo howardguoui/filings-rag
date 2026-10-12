@@ -93,8 +93,10 @@
            · <a href="${esc(c.url)}" target="_blank" rel="noopener">Open filing</a><p class="snip">${esc(c.snippet)}…</p></li>`).join('')
       : '<li>No sources cited.</li>';
     const t = data.timings_ms || {};
-    const total = Object.values(t).reduce((a, b) => a + b, 0);
+    // first_token_ms overlaps the stages, so it is shown beside the total, not added to it
+    const total = Object.entries(t).reduce((a, [k, v]) => (k === 'first_token_ms' ? a : a + v), 0);
     $('#meta').textContent = `${MODE_LABEL[data.mode] || data.mode} · ${data.model} · ${Math.round(total)} ms` +
+      (t.first_token_ms != null ? `, first words at ${Math.round(t.first_token_ms)} ms` : '') +
       (t.rerank_ms ? ` (rerank ${Math.round(t.rerank_ms)} ms, answer ${Math.round(t.generate_ms || 0)} ms)` : '') +
       (note ? ` · ${note}` : '');
     $('#answer').hidden = false;
@@ -107,14 +109,37 @@
     const btn = $('#ask-btn'); const status = $('#status');
     btn.disabled = true; status.className = 'status'; status.textContent = 'Searching the filings…';
     try {
-      const r = await fetch('/api/ask', {
+      const r = await fetch('/api/ask/stream', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, tickers: [...state.tickers], mode: $('#mode').value }),
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || `Request failed (${r.status})`);
-      status.textContent = '';
-      renderAnswer(data);
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || `Request failed (${r.status})`);
+      }
+      // Server-sent events: `token` text while the model writes, then the full `answer` with citations
+      let text = '', done = false, buf = '';
+      const reader = r.body.getReader(); const dec = new TextDecoder();
+      const onEvent = (name, data) => {
+        if (name === 'token') {
+          if (!text) { status.textContent = ''; $('#sources').innerHTML = ''; $('#meta').textContent = 'Writing…'; $('#answer').hidden = false; }
+          text += data.text; $('#answer-text').textContent = text;
+        } else if (name === 'answer') { done = true; status.textContent = ''; renderAnswer(data); }
+        else if (name === 'error') throw new Error(data.detail);
+      };
+      for (;;) {
+        const { value, done: end } = await reader.read();
+        buf += dec.decode(value || new Uint8Array(), { stream: !end });
+        let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const block = buf.slice(0, i); buf = buf.slice(i + 2);
+          const name = (block.match(/^event: (.*)$/m) || [])[1];
+          const data = (block.match(/^data: (.*)$/m) || [])[1];
+          if (name && data) onEvent(name, JSON.parse(data));
+        }
+        if (end) break;
+      }
+      if (!done) throw new Error('The answer stopped before it finished. Try again.');
     } catch (err) {
       status.className = 'status err'; status.textContent = err.message;
     } finally { btn.disabled = false; }

@@ -1,5 +1,7 @@
 """Compare answer-model latency and throughput: Ollama vs vLLM vs Claude API.
 
+Answers are streamed, so each run records time to first token as well as total latency.
+
 Every backend gets the same real RAG prompts (retrieved from your indexed filings),
 so the comparison reflects this app's workload, not a toy prompt.
 
@@ -18,7 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from filings_rag.config import get_settings
-from filings_rag.llm import make_llm
+from filings_rag.llm import Generation, make_llm
 from filings_rag.rag import SYSTEM_PROMPT, build_prompt
 
 QUESTIONS = [
@@ -38,14 +40,27 @@ def build_prompts(k: int) -> list[str]:
     return [build_prompt(q, r.search(q, mode="hybrid", k=k).hits) for q in QUESTIONS]
 
 
+def timed_run(llm, prompt: str, max_tokens: int) -> Generation:
+    """One streamed answer, so time to first token is measured alongside total latency."""
+    final = None
+    for piece in llm.stream(SYSTEM_PROMPT, prompt, max_tokens):
+        if isinstance(piece, Generation):
+            final = piece
+    if final is None:
+        raise RuntimeError(f"{llm.name} stream ended without a final result")
+    return final
+
+
 def bench(provider: str, prompts: list[str], runs: int, max_tokens: int) -> dict:
     llm = make_llm(get_settings(), provider)
-    llm.generate(SYSTEM_PROMPT, prompts[0], 16)  # warm-up: load weights / open connections
-    lat, tps, out_tokens = [], [], []
+    timed_run(llm, prompts[0], 16)  # warm-up: load weights / open connections
+    lat, ttft, tps, out_tokens = [], [], [], []
     for i in range(runs):
-        g = llm.generate(SYSTEM_PROMPT, prompts[i % len(prompts)], max_tokens)
+        g = timed_run(llm, prompts[i % len(prompts)], max_tokens)
         lat.append(g.latency_ms)
-        if g.output_tokens:
+        if g.first_token_ms is not None:
+            ttft.append(g.first_token_ms)
+        if g.output_tokens and g.latency_ms > 0:
             out_tokens.append(g.output_tokens)
             tps.append(g.output_tokens / (g.latency_ms / 1000))
     return {
@@ -53,9 +68,19 @@ def bench(provider: str, prompts: list[str], runs: int, max_tokens: int) -> dict
         "runs": runs,
         "median_latency_ms": statistics.median(lat),
         "p90_latency_ms": sorted(lat)[max(0, int(len(lat) * 0.9) - 1)],
+        "median_first_token_ms": statistics.median(ttft) if ttft else None,
         "median_output_tokens": statistics.median(out_tokens) if out_tokens else None,
         "median_tokens_per_s": statistics.median(tps) if tps else None,
     }
+
+
+def table_row(provider: str, r: dict) -> str:
+    tps = f"{r['median_tokens_per_s']:.0f}" if r["median_tokens_per_s"] else "–"
+    ttft = f"{r['median_first_token_ms']:.0f} ms" if r["median_first_token_ms"] is not None else "–"
+    return (
+        f"| {provider} | {r['model']} | {ttft} | {r['median_latency_ms']:.0f} ms "
+        f"| {r['p90_latency_ms']:.0f} ms | {tps} |"
+    )
 
 
 def main() -> None:
@@ -85,17 +110,14 @@ def main() -> None:
         f"{a.runs} runs per backend over {len(prompts)} real RAG prompts "
         f"(top {a.k} chunks), max {a.max_tokens} tokens.",
         "",
-        "| Backend | Model | Median latency | p90 latency | Tokens/s |",
-        "| --- | --- | --- | --- | --- |",
+        "| Backend | Model | Median first token | Median latency | p90 latency | Tokens/s |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     for p, r in results.items():
         if "error" in r:
-            lines.append(f"| {p} | error: {r['error']} | | | |")
+            lines.append(f"| {p} | error: {r['error']} | | | | |")
         else:
-            tps = f"{r['median_tokens_per_s']:.0f}" if r["median_tokens_per_s"] else "–"
-            lines.append(
-                f"| {p} | {r['model']} | {r['median_latency_ms']:.0f} ms | {r['p90_latency_ms']:.0f} ms | {tps} |"
-            )
+            lines.append(table_row(p, r))
     (OUT / "latest.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
 

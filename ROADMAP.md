@@ -7,8 +7,6 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 - [ ] **Live demo on Render** (visitors type their own questions) once an API budget is worth it; the free static
       demo covers the portfolio use for now.
-- [ ] **Streaming answers:** server-sent events from `/api/ask` so the page shows tokens as they arrive; measure
-      time to first token alongside total latency.
 - [ ] **Query rewriting for multi-company questions:** split "compare Apple and Microsoft on X" into one retrieval
       per company, then merge, and add comparison questions to `evals/questions.yaml`.
 - [ ] **Reranker ablation:** report hit rate and latency with and without the cross-encoder, and with 20 vs 40
@@ -23,6 +21,9 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 ## Shipped
 
+- 2026-10-12: streaming answers: `POST /api/ask/stream` sends server-sent events (tokens, then the cited answer)
+  from Claude, Ollama and vLLM, the demo page renders tokens as they arrive, and time to first token is reported in
+  the answer timings and the `benchmarks.llm_latency` table.
 - 2026-10-07: free static demo on GitHub Pages (howardguoui.github.io/filings-rag): `filings-rag demo-export`
   records 10 real answers (qwen3:8b, hybrid + rerank) and the latest evaluation into `docs/`.
 - 2026-10-07: first published evaluation (RTX 5070 Ti, local qwen3:8b answers and judge): hybrid hit rate@6 84% /

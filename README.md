@@ -42,6 +42,10 @@ flowchart LR
 - **Grounded answers.** The model may only use the numbered sources, must cite every sentence, and must say
   "The filings provided do not contain this information" when they don't.
 - **Three answer backends.** Claude API for the public demo, Ollama for free local runs, vLLM for fast local serving.
+- **Streamed answers.** `POST /api/ask/stream` sends server-sent events: `token` events as the model writes, then
+  one `answer` event with the citations and timings, including `first_token_ms` (from the start of retrieval to the
+  first words). The demo page shows the answer as it is written. `POST /api/ask` still returns the whole answer as
+  JSON.
 
 ## Evaluation
 
@@ -98,6 +102,8 @@ docker compose --profile vllm up -d vllm              # NVIDIA GPU, 16 GB is eno
 python -m benchmarks.llm_latency --providers ollama vllm anthropic --runs 10
 ```
 
+Answers are streamed, so the table reports median time to first token next to median and p90 total latency.
+
 ## Free static demo (GitHub Pages)
 
 `filings-rag demo-export --llm ollama` answers a fixed set of example questions for real (same retrieval and
@@ -129,9 +135,9 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/filings pytest
 ```
 
 Parsing, chunking, EDGAR pagination and retries, hybrid SQL against real pgvector, the API (validation, rate limits,
-connection pool, health check, failures), the eval harness, and the exact request shape sent to the Anthropic SDK
-and the RAGAS judge are covered. CI runs them on pushes to `main` and on pull requests, with a pgvector service
-container.
+connection pool, health check, failures, the streamed event sequence), the eval harness, and the exact request
+shape sent to the Anthropic SDK (plain and streamed), the OpenAI-compatible client and the RAGAS judge are covered.
+CI runs them on pushes to `main` and on pull requests, with a pgvector service container.
 
 ## Layout
 

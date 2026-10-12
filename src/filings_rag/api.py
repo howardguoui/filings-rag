@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
-from .rag import answer_question
+from .rag import Answer, answer_question, stream_answer
 from .retrieval import Filters, Retriever
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -69,6 +69,16 @@ def _client_id(request: Request, trusted_hops: int) -> str:
     if trusted_hops > 0 and len(fwd) >= trusted_hops:
         return fwd[-trusted_hops]
     return request.client.host if request.client else "unknown"
+
+
+def _sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+def _public(ans: Answer) -> dict:
+    out = asdict(ans)
+    out.pop("contexts")
+    return out
 
 
 def create_app(settings: Settings | None = None, conn=None, embedder=None, llm=None, reranker=None) -> FastAPI:
@@ -139,31 +149,62 @@ def create_app(settings: Settings | None = None, conn=None, embedder=None, llm=N
             rows = list_filings(c)
         return [{**r, "filing_date": str(r["filing_date"])} for r in rows]
 
-    @app.post("/api/ask")
-    def ask(body: AskRequest, request: Request) -> dict:
+    def admit(body: AskRequest, request: Request) -> None:
         if len(body.question) > settings.max_question_chars:
             raise HTTPException(422, f"Keep questions under {settings.max_question_chars} characters.")
         if state["llm"] is None:
             raise HTTPException(503, f"The answer model is not configured: {state.get('llm_error', 'unknown')}")
         limiter.check(_client_id(request, settings.trusted_proxy_hops))
+
+    def run_args(body: AskRequest) -> dict:
+        return {
+            "mode": body.mode or settings.retrieval_mode,
+            "k": body.k,
+            "filters": Filters(tickers=body.tickers, fiscal_year=body.fiscal_year),
+            "max_tokens": settings.max_answer_tokens,
+        }
+
+    @app.post("/api/ask")
+    def ask(body: AskRequest, request: Request) -> dict:
+        admit(body, request)
         try:
             with database() as c:
                 ans = answer_question(
                     body.question,
                     Retriever(c, state["embedder"], state["reranker"], settings.candidate_k),
                     state["llm"],
-                    mode=body.mode or settings.retrieval_mode,
-                    k=body.k,
-                    filters=Filters(tickers=body.tickers, fiscal_year=body.fiscal_year),
-                    max_tokens=settings.max_answer_tokens,
+                    **run_args(body),
                 )
         except HTTPException:
             raise
         except Exception as exc:  # model/API failure: say what happened, don't leak a stack trace
             raise HTTPException(502, f"The answer model failed: {type(exc).__name__}") from exc
-        out = asdict(ans)
-        out.pop("contexts")
-        return out
+        return _public(ans)
+
+    @app.post("/api/ask/stream")
+    def ask_stream(body: AskRequest, request: Request) -> StreamingResponse:
+        """Same answer as /api/ask, sent as server-sent events: `token` events with text as the model
+        writes it, then one `answer` event with the full answer, citations and timings (including
+        first_token_ms). A failure after streaming has started arrives as an `error` event."""
+        admit(body, request)
+        if not hasattr(state["llm"], "stream"):
+            raise HTTPException(501, f"{state['llm'].name} does not support streaming; use /api/ask")
+
+        def events():
+            try:
+                with database() as c:
+                    retriever = Retriever(c, state["embedder"], state["reranker"], settings.candidate_k)
+                    for piece in stream_answer(body.question, retriever, state["llm"], **run_args(body)):
+                        if isinstance(piece, Answer):
+                            yield _sse("answer", _public(piece))
+                        else:
+                            yield _sse("token", {"text": piece})
+            except Exception as exc:  # headers are already sent, so report it in the stream
+                yield _sse("error", {"detail": f"The answer model failed: {type(exc).__name__}"})
+
+        # no-cache + X-Accel-Buffering: keep proxies (Render, nginx) from holding tokens back
+        headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        return StreamingResponse(events(), media_type="text/event-stream", headers=headers)
 
     @app.get("/api/evals/latest")
     def evals_latest() -> dict:
