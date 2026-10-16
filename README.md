@@ -37,6 +37,12 @@ flowchart LR
   returns nothing for most natural questions) and ranks chunks with more of them higher. Both rankings are fused
   with RRF: `score = Σ 1 / (60 + rank)`. Filtered vector search uses pgvector's iterative HNSW scan, so filtering to
   one company still returns k results.
+- **One search per company for comparisons.** "Compare Apple and Microsoft on supply chain risk" searched as one
+  query tends to fill all k slots from whichever filing matches the wording best. A question that names two or more
+  indexed companies (by ticker, like `BAC`, or by name, like "Bank of America" or "Goldman") is searched once per
+  company and the rankings are interleaved, so each company gets about k / n of the sources. Picking several company
+  chips and asking "compare their cybersecurity governance" does the same. Matching uses the names in the index, so
+  it needs no LLM call, and the question is embedded once for all the searches.
 - **Reranking.** The top 40 fused candidates are rescored by a cross-encoder (`ms-marco-MiniLM-L-6-v2`) that reads
   the question and passage together.
 - **Grounded answers.** The model may only use the numbered sources, must cite every sentence, and must say
@@ -49,17 +55,18 @@ flowchart LR
 
 ## Evaluation
 
-`evals/questions.yaml` holds 36 questions across 8 companies: 32 answerable, each tagged with the 10-K Item that
-answers it, and 4 unanswerable ones that test refusals.
+`evals/questions.yaml` holds 40 questions across 8 companies: 36 answerable, each tagged with the 10-K Item that
+answers it (4 of them compare two companies), and 4 unanswerable ones that test refusals.
 
 | What | Metric |
 | --- | --- |
 | Retrieval | Hit rate@6 (the right company and Item is retrieved) and MRR, for vector, keyword, hybrid and hybrid + rerank, next to the exact score of a random ranking under the same filters |
+| Comparisons | Share of comparison questions where every company named has its Item in the top 6, with one search per company and with one search for the whole question |
 | Answers (RAGAS, LLM judge) | Faithfulness, answer relevancy, context precision (no reference needed) |
 | Behavior | Citation rate, correct refusals on unanswerable questions, false refusals |
 
 **Latest run** ([evals/results/latest.md](evals/results/latest.md), 2026-10-07 on an RTX 5070 Ti, answers and
-grading by local qwen3:8b):
+grading by local qwen3:8b; it predates the comparison questions, so it covers the first 32 answerable ones):
 
 - Retrieval: hybrid search reaches hit rate@6 **84%** and MRR **0.83**, against 63% and 0.39 for a random ranking.
 - Answers: faithfulness **97%** (scored on 30 of 32 answers), answer relevancy **91%**, context precision **89%**.

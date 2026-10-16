@@ -1,7 +1,9 @@
 """Evaluate retrieval and answers.
 
 1. Retrieval (no LLM, deterministic): for each mode, hit rate@k and MRR against the
-   expected 10-K section, plus median search latency.
+   expected 10-K section, plus median search latency. On comparison questions (two or
+   more companies), how often every company's section is in the top k, with and without
+   splitting the search per company.
 2. Answers (RAGAS 0.4, LLM-as-judge): faithfulness, answer relevancy and context
    precision on answerable questions; citation rate; correct refusals on
    unanswerable questions.
@@ -47,6 +49,10 @@ class Question:
     def filters(self) -> Filters:
         return Filters(tickers=self.tickers if self.filter_tickers else None)
 
+    @property
+    def is_comparison(self) -> bool:
+        return len(self.tickers) >= 2
+
 
 def load_questions(path: Path = HERE / "questions.yaml") -> list[Question]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))["questions"]
@@ -67,9 +73,27 @@ def is_hit(q: Question, ticker: str, section: str) -> bool:
     return ticker.upper() in q.tickers and section.upper() in q.sections
 
 
+def covers_every_company(q: Question, hits) -> bool:
+    """True when, for each company the question names, a chunk from an expected Item is in `hits`."""
+    found = {h.ticker.upper() for h in hits if is_hit(q, h.ticker, h.section_item)}
+    return set(q.tickers) <= found
+
+
+def comparison_coverage(retriever: Retriever, questions: list[Question], mode: str, k: int, split: bool) -> dict:
+    """Share of comparison questions whose top k covers every company, searched with or without
+    the per-company split."""
+    per_q = []
+    for q in questions:
+        res = retriever.search(q.question, mode=mode, k=k, filters=q.filters, split_companies=split)
+        per_q.append({"id": q.id, "every_company": covers_every_company(q, res.hits)})
+    return {"rate": sum(p["every_company"] for p in per_q) / len(per_q), "per_question": per_q}
+
+
 def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: list[str], k: int) -> dict:
-    """Hit rate@k, MRR and median search latency per retrieval mode."""
+    """Hit rate@k, MRR and median search latency per retrieval mode, plus, when the set has comparison
+    questions, how often every company named is covered with and without splitting the search."""
     answerable = [q for q in questions if not q.unanswerable]
+    comparisons = [q for q in answerable if q.is_comparison]
     out: dict[str, dict] = {}
     for mode in modes:
         if mode == "hybrid_rerank" and retriever.reranker is None:
@@ -87,6 +111,12 @@ def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: li
             "median_ms": statistics.median(times),
             "per_question": per_q,
         }
+        if comparisons:
+            out[mode]["comparisons"] = {
+                "n": len(comparisons),
+                "split": comparison_coverage(retriever, comparisons, mode, k, split=True),
+                "single_search": comparison_coverage(retriever, comparisons, mode, k, split=False),
+            }
     return out
 
 
@@ -299,6 +329,18 @@ def write_report(result: dict) -> Path:
         lines.append(f"| {mode} | {pct(m['hit_rate'])} | {m['mrr']:.2f} | {m['median_ms']:.0f} ms |")
     if b := result.get("baseline"):
         lines.append(f"| random ranking (baseline) | {pct(b['hit_rate'])} | {b['mrr']:.2f} | – |")
+    compared = {mode: m["comparisons"] for mode, m in result["retrieval"].items() if m.get("comparisons")}
+    if compared:
+        n = next(iter(compared.values()))["n"]
+        lines += [
+            "",
+            f"## Comparison questions ({n}): every company named has its section in the top {result['k']}",
+            "",
+            "| Method | One search per company | One search for the question |",
+            "| --- | --- | --- |",
+        ]
+        for mode, c in compared.items():
+            lines.append(f"| {mode} | {pct(c['split']['rate'])} | {pct(c['single_search']['rate'])} |")
     g = result.get("generation")
     if g:
         judged = f"judged by {g['judge']}" if g["judge"] else "not judged: pass --judge for RAGAS scores"

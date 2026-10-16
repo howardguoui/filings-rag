@@ -3,6 +3,8 @@
 #   retrieved chunk is from one of these Items of one of the expected companies.
 # filter_tickers: true = search only that company (like picking its chip in the UI);
 #   false = search every filing, so retrieval must also find the right company.
+# Two or more tickers make a comparison question: a hit needs any one of them, and the
+#   "every company" rate needs the expected Item for each of them in the top k.
 # unanswerable: true = the filings do not contain the answer; the model should say so.
 
 questions:
@@ -182,6 +184,29 @@ questions:
     question: How did Amazon Web Services sales change year over year?
     tickers: [AMZN]
     expect: {sections: ["7"]}
+    filter_tickers: false
+
+  # Comparisons: two companies named, no filter. Each company is searched separately, and the
+  # report counts how often the top k holds the expected Item for every company named.
+  - id: x-cmp-aapl-msft-cyber
+    question: Compare how Apple and Microsoft manage and govern cybersecurity risk.
+    tickers: [AAPL, MSFT]
+    expect: {sections: ["1C"]}
+    filter_tickers: false
+  - id: x-cmp-nvda-amzn-competition
+    question: What competition do NVIDIA and Amazon each say they face?
+    tickers: [NVDA, AMZN]
+    expect: {sections: ["1A", "1"]}
+    filter_tickers: false
+  - id: x-cmp-tsla-aapl-suppliers
+    question: Compare the supplier and supply chain risks that Tesla and Apple describe.
+    tickers: [TSLA, AAPL]
+    expect: {sections: ["1A"]}
+    filter_tickers: false
+  - id: x-cmp-tsla-nvda-employees
+    question: How many employees did Tesla and NVIDIA each have at the end of the fiscal year?
+    tickers: [TSLA, NVDA]
+    expect: {sections: ["1"]}
     filter_tickers: false
 
   # Unanswerable: the model should say the filings do not contain this

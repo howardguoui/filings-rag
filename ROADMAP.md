@@ -7,8 +7,6 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 - [ ] **Live demo on Render** (visitors type their own questions) once an API budget is worth it; the free static
       demo covers the portfolio use for now.
-- [ ] **Query rewriting for multi-company questions:** split "compare Apple and Microsoft on X" into one retrieval
-      per company, then merge, and add comparison questions to `evals/questions.yaml`.
 - [ ] **Reranker ablation:** report hit rate and latency with and without the cross-encoder, and with 20 vs 40
       candidates, so the reranking cost is justified by numbers.
 - [ ] **Multi-year filings:** ingest 3 fiscal years per company and add year-over-year questions
@@ -21,6 +19,10 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 ## Shipped
 
+- 2026-10-16: multi-company questions: a question naming two or more indexed companies (ticker or name), or one
+  asked with several companies selected and none named, is searched once per company and the rankings are
+  interleaved, so every company gets sources. Four comparison questions in `evals/questions.yaml`, and the report
+  shows how often every company is covered with and without the split.
 - 2026-10-12: streaming answers: `POST /api/ask/stream` sends server-sent events (tokens, then the cited answer)
   from Claude, Ollama and vLLM, the demo page renders tokens as they arrive, and time to first token is reported in
   the answer timings and the `benchmarks.llm_latency` table.

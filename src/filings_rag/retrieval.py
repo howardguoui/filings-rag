@@ -3,18 +3,22 @@
 Hybrid search runs both searches inside Postgres and fuses the two rankings with
 RRF: score = sum(1 / (60 + rank)). Keyword search catches exact terms such as
 "Item 1C" or "Basel III" that embeddings blur; vector search catches paraphrases.
+
+A question that names several companies is searched once per company and the rankings
+are interleaved (see query_plan), so a comparison retrieves evidence for every company.
 """
 
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 import psycopg
 
 from .config import RetrievalMode
 from .embeddings import Embedder
+from .query_plan import Company, interleave, split_tickers
 
 RRF_K = 60
 
@@ -70,6 +74,7 @@ class RetrievalResult:
     hits: list[Hit]
     mode: str
     timings_ms: dict[str, float] = field(default_factory=dict)
+    split_tickers: list[str] = field(default_factory=list)  # searched one company at a time, in this order
 
 
 _SELECT = """c.id, f.ticker, f.company, f.fiscal_year, c.section_item, c.section_title,
@@ -129,32 +134,72 @@ class Retriever:
         self.embedder = embedder
         self.reranker = reranker
         self.candidate_k = candidate_k
+        self._companies: list[Company] | None = None
+
+    def companies(self) -> list[Company]:
+        """The companies in the index, read once per Retriever (one is made per request)."""
+        if self._companies is None:
+            rows = self.conn.execute(
+                "SELECT DISTINCT ON (ticker) ticker, company FROM filings ORDER BY ticker"
+            ).fetchall()
+            self._companies = [Company(r["ticker"], r["company"]) for r in rows]
+        return self._companies
 
     def search(
-        self, query: str, mode: RetrievalMode = "hybrid", k: int = 6, filters: Filters | None = None
+        self,
+        query: str,
+        mode: RetrievalMode = "hybrid",
+        k: int = 6,
+        filters: Filters | None = None,
+        split_companies: bool = True,
     ) -> RetrievalResult:
+        """Top k chunks for a query. With split_companies, a query that names two or more companies
+        (or one with no company named, filtered to several) runs once per company and the per-company
+        rankings are interleaved, so each company gets about k / n of the slots."""
         filters = filters or Filters()
-        where, params = filters.sql()
-        timings: dict[str, float] = {}
-        t0 = time.perf_counter()
-
         if mode == "hybrid_rerank" and self.reranker is None:
             mode = "hybrid"  # reranker disabled in this deployment
+        one_company = filters.tickers is not None and len({t.upper() for t in filters.tickers}) == 1
+        tickers = split_tickers(query, self.companies(), filters.tickers) if split_companies and not one_company else []
+        if not tickers:
+            return self._search(query, mode, k, filters, None, {})
+
+        timings: dict[str, float] = {}
+        qvec = None
+        if mode != "keyword":  # embed once; every company's search uses the same query text
+            t0 = time.perf_counter()
+            qvec = np.asarray(self.embedder.embed_query(query), dtype=np.float32)
+            timings["embed_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        rankings = [self._search(query, mode, k, replace(filters, tickers=[t]), qvec, timings).hits for t in tickers]
+        return RetrievalResult(hits=interleave(rankings, k), mode=mode, timings_ms=timings, split_tickers=tickers)
+
+    def _search(
+        self, query: str, mode: str, k: int, filters: Filters, qvec: np.ndarray | None, timings: dict[str, float]
+    ) -> RetrievalResult:
+        """One search. Timings add up into `timings`, so per-company searches report their total."""
+        where, params = filters.sql()
         fetch_k = self.candidate_k if mode == "hybrid_rerank" else k
 
         params.update({"text": query, "k": fetch_k, "cand": self.candidate_k})
         if mode in ("vector", "hybrid", "hybrid_rerank"):
-            params["q"] = np.asarray(self.embedder.embed_query(query), dtype=np.float32)
-            timings["embed_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            if qvec is None:
+                t0 = time.perf_counter()
+                qvec = np.asarray(self.embedder.embed_query(query), dtype=np.float32)
+                _add(timings, "embed_ms", t0)
+            params["q"] = qvec
 
         sql = {"vector": _vector_sql, "keyword": _keyword_sql}.get(mode, _hybrid_sql)(where)
         t1 = time.perf_counter()
         rows = self.conn.execute(sql, params).fetchall()
-        timings["search_ms"] = round((time.perf_counter() - t1) * 1000, 1)
+        _add(timings, "search_ms", t1)
         hits = [Hit(**{**r, "score": float(r["score"])}) for r in rows]
 
         if mode == "hybrid_rerank" and hits:
             t2 = time.perf_counter()
             hits = self.reranker.rerank(query, hits, k)
-            timings["rerank_ms"] = round((time.perf_counter() - t2) * 1000, 1)
+            _add(timings, "rerank_ms", t2)
         return RetrievalResult(hits=hits[:k], mode=mode, timings_ms=timings)
+
+
+def _add(timings: dict[str, float], key: str, since: float) -> None:
+    timings[key] = round(timings.get(key, 0.0) + (time.perf_counter() - since) * 1000, 1)
