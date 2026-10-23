@@ -152,3 +152,26 @@ def test_result_file_names_are_digits_only():
 
     # The first real run was saved as "20261007 0011 U.json": the old slicing cut "UTC" in half.
     assert result_stamp("2026-10-07 00:11 UTC") == "202610070011"
+
+
+def test_numeric_questions_are_scored_on_their_own(db, embedder, tmp_path, monkeypatch):
+    questions = _fixture_questions() + [
+        Question("seg", "What were Services sales in fiscal 2025 and 2024?", ["ACME"], ["7"], True, False, True)
+    ]
+    m = retrieval_metrics(Retriever(db, embedder, None), questions, ["hybrid"], k=3)["hybrid"]
+    assert m["numeric"]["n"] == 1 and m["numeric"]["hit_rate"] == 1.0 and m["numeric"]["mrr"] > 0
+    assert (
+        "numeric" not in retrieval_metrics(Retriever(db, embedder, None), _fixture_questions(), ["hybrid"], 3)["hybrid"]
+    )
+
+    monkeypatch.setattr(run_evals, "RESULTS", tmp_path)
+    result = {"run_at": "2026-10-23 12:00 UTC", "n_questions": 5, "k": 3, "embed_model": "hash"}
+    text = write_report({**result, "retrieval": {"hybrid": m}}).read_text()
+    assert "## Numeric questions (1): the answer is a figure in a financial table" in text
+    assert f"| hybrid | 100% | {m['numeric']['mrr']:.2f} |" in text
+
+
+def test_question_file_has_numeric_questions_on_items_7_and_8():
+    numeric = [q for q in load_questions() if q.numeric]
+    assert len(numeric) >= 5
+    assert all(not q.unanswerable and {"7", "8"} <= set(q.sections) for q in numeric)

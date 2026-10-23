@@ -16,7 +16,7 @@ recorded answers; see [Free static demo](#free-static-demo-github-pages))
 flowchart LR
     A[SEC EDGAR<br/>10-K HTML] --> B[Clean text<br/>tables kept as rows]
     B --> C[Split into Items<br/>1A, 1C, 7, 7A ...]
-    C --> D[Chunk ~320 words<br/>+ contextual header]
+    C --> D[Chunk ~320 words<br/>tables whole + caption<br/>+ contextual header]
     D --> E[(Postgres<br/>pgvector HNSW<br/>+ tsvector GIN)]
     Q[Question] --> F[Vector search] & G[Keyword search]
     E --> F & G
@@ -32,6 +32,11 @@ flowchart LR
   around a cross-reference index instead of Item headings (common for large banks) are detected and indexed whole.
 - **Contextual chunk headers.** Each chunk is embedded with a line like
   `Bank of America (BAC) 10-K FY2025, Item 7A. Market Risk`, so "rates rose 100 bps" is tied to a company and year.
+- **Table-aware chunks.** A financial table gets a chunk of its own, led by the sentence that introduces it ("The
+  following table shows net sales by category (in millions):"), instead of being cut wherever a prose chunk ran out of
+  words, which left numbers without their row labels or column header. A table too long for one chunk is split by
+  rows, and every piece repeats the caption and the header row. Layout tables with few numbers (bullet lists) stay
+  prose. The evaluation set has numeric questions whose answers sit in these tables, reported on their own.
 - **Hybrid search in one SQL query.** Vector similarity (HNSW, cosine) finds paraphrases; full-text search finds exact
   terms like "Basel III" or "value-at-risk". Keyword search matches any of the question's terms (an all-terms match
   returns nothing for most natural questions) and ranks chunks with more of them higher. Both rankings are fused
@@ -55,18 +60,21 @@ flowchart LR
 
 ## Evaluation
 
-`evals/questions.yaml` holds 40 questions across 8 companies: 36 answerable, each tagged with the 10-K Item that
-answers it (4 of them compare two companies), and 4 unanswerable ones that test refusals.
+`evals/questions.yaml` holds 46 questions across 8 companies: 42 answerable, each tagged with the 10-K Item that
+answers it (4 of them compare two companies, and 6 are numeric, answered by a figure in a financial table), and 4
+unanswerable ones that test refusals.
 
 | What | Metric |
 | --- | --- |
 | Retrieval | Hit rate@6 (the right company and Item is retrieved) and MRR, for vector, keyword, hybrid and hybrid + rerank, next to the exact score of a random ranking under the same filters |
 | Comparisons | Share of comparison questions where every company named has its Item in the top 6, with one search per company and with one search for the whole question |
+| Numeric questions | Hit rate@6 and MRR on the questions answered by a figure in a table |
 | Answers (RAGAS, LLM judge) | Faithfulness, answer relevancy, context precision (no reference needed) |
 | Behavior | Citation rate, correct refusals on unanswerable questions, false refusals |
 
 **Latest run** ([evals/results/latest.md](evals/results/latest.md), 2026-10-07 on an RTX 5070 Ti, answers and
-grading by local qwen3:8b; it predates the comparison questions, so it covers the first 32 answerable ones):
+grading by local qwen3:8b; it predates the comparison and numeric questions and the table-aware chunks, so it
+covers the first 32 answerable ones):
 
 - Retrieval: hybrid search reaches hit rate@6 **84%** and MRR **0.83**, against 63% and 0.39 for a random ranking.
 - Answers: faithfulness **97%** (scored on 30 of 32 answers), answer relevancy **91%**, context precision **89%**.
@@ -89,6 +97,7 @@ docker compose up -d db           # Postgres 16 + pgvector
 pip install -e ".[evals,dev]"
 
 filings-rag ingest AAPL MSFT NVDA AMZN JPM BAC GS TSLA   # latest 10-K for each company
+filings-rag ingest --rechunk      # rebuild chunks of indexed filings after a chunking change (uses the cache)
 filings-rag ask "How does Bank of America govern cybersecurity risk?" --tickers BAC
 filings-rag serve                 # http://localhost:8080
 ```

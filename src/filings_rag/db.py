@@ -109,6 +109,10 @@ def upsert_filing(conn: psycopg.Connection, f: Filing) -> tuple[int, bool]:
     return row["id"], has is not None
 
 
+def delete_chunks(conn: psycopg.Connection, filing_id: int) -> int:
+    return conn.execute("DELETE FROM chunks WHERE filing_id = %s", (filing_id,)).rowcount
+
+
 def insert_chunks(
     conn: psycopg.Connection, filing_id: int, chunks: Iterable[Chunk], vectors: Iterable[np.ndarray]
 ) -> int:

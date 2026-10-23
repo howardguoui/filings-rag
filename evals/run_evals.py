@@ -3,7 +3,8 @@
 1. Retrieval (no LLM, deterministic): for each mode, hit rate@k and MRR against the
    expected 10-K section, plus median search latency. On comparison questions (two or
    more companies), how often every company's section is in the top k, with and without
-   splitting the search per company.
+   splitting the search per company. On numeric questions (the answer is a figure in a
+   financial table), hit rate and MRR on their own.
 2. Answers (RAGAS 0.4, LLM-as-judge): faithfulness, answer relevancy and context
    precision on answerable questions; citation rate; correct refusals on
    unanswerable questions.
@@ -44,6 +45,7 @@ class Question:
     sections: list[str]
     filter_tickers: bool
     unanswerable: bool
+    numeric: bool = False
 
     @property
     def filters(self) -> Filters:
@@ -64,6 +66,7 @@ def load_questions(path: Path = HERE / "questions.yaml") -> list[Question]:
             sections=[s.upper() for s in q.get("expect", {}).get("sections", [])],
             filter_tickers=q.get("filter_tickers", True),
             unanswerable=q.get("unanswerable", False),
+            numeric=q.get("numeric", False),
         )
         for q in raw
     ]
@@ -91,7 +94,8 @@ def comparison_coverage(retriever: Retriever, questions: list[Question], mode: s
 
 def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: list[str], k: int) -> dict:
     """Hit rate@k, MRR and median search latency per retrieval mode, plus, when the set has comparison
-    questions, how often every company named is covered with and without splitting the search."""
+    questions, how often every company named is covered with and without splitting the search, and
+    hit rate and MRR on the numeric questions alone."""
     answerable = [q for q in questions if not q.unanswerable]
     comparisons = [q for q in answerable if q.is_comparison]
     out: dict[str, dict] = {}
@@ -105,12 +109,19 @@ def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: li
             ranks.append(rank)
             times.append(sum(res.timings_ms.values()))
             per_q.append({"id": q.id, "rank": rank})
+        numeric = [rank for q, rank in zip(answerable, ranks, strict=True) if q.numeric]
         out[mode] = {
             "hit_rate": sum(r is not None for r in ranks) / len(ranks),
             "mrr": sum(1 / r for r in ranks if r) / len(ranks),
             "median_ms": statistics.median(times),
             "per_question": per_q,
         }
+        if numeric:
+            out[mode]["numeric"] = {
+                "n": len(numeric),
+                "hit_rate": sum(r is not None for r in numeric) / len(numeric),
+                "mrr": sum(1 / r for r in numeric if r) / len(numeric),
+            }
         if comparisons:
             out[mode]["comparisons"] = {
                 "n": len(comparisons),
@@ -341,6 +352,18 @@ def write_report(result: dict) -> Path:
         ]
         for mode, c in compared.items():
             lines.append(f"| {mode} | {pct(c['split']['rate'])} | {pct(c['single_search']['rate'])} |")
+    numeric = {mode: m["numeric"] for mode, m in result["retrieval"].items() if m.get("numeric")}
+    if numeric:
+        n = next(iter(numeric.values()))["n"]
+        lines += [
+            "",
+            f"## Numeric questions ({n}): the answer is a figure in a financial table",
+            "",
+            "| Method | Hit rate | MRR |",
+            "| --- | --- | --- |",
+        ]
+        for mode, m in numeric.items():
+            lines.append(f"| {mode} | {pct(m['hit_rate'])} | {m['mrr']:.2f} |")
     g = result.get("generation")
     if g:
         judged = f"judged by {g['judge']}" if g["judge"] else "not judged: pass --judge for RAGAS scores"

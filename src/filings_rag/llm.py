@@ -208,7 +208,8 @@ class FakeLLM:
         start = user.find(marker)
         if start == -1:
             return Generation("The filings provided do not contain this information.", "fake", 0, 0, 0.0)
-        body = user[start + len(marker) :].split("\n", 2)[-1]
+        # Only source [1]: a table source has no ". " to stop at, and reading on into "[2] ..." would cite [2].
+        body = user[start + len(marker) :].split("\n\n[2] ")[0].split("\n", 2)[-1]
         first = body.split(". ")[0].strip()
         return Generation(f"{first} [1].", "fake", 0, 0, 0.0)
 

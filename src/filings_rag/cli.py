@@ -1,6 +1,7 @@
 """Command line: ingest filings, ask questions, run evaluations, serve the API.
 
 filings-rag ingest AAPL MSFT NVDA JPM BAC --years 1
+filings-rag ingest --rechunk           # rebuild the chunks of filings already indexed
 filings-rag ask "What cybersecurity risks does JPMorgan describe?" --tickers JPM
 filings-rag eval --modes vector hybrid hybrid_rerank
 filings-rag serve
@@ -41,7 +42,7 @@ def cmd_ingest(args) -> None:
 
     s = get_settings()
     edgar = EdgarClient(s.sec_user_agent, f"{s.data_dir}/raw")
-    counts = ingest_tickers(connect(s.database_url), make_embedder(s), edgar, args.tickers, args.years)
+    counts = ingest_tickers(connect(s.database_url), make_embedder(s), edgar, args.tickers, args.years, args.rechunk)
     for name, n in counts.items():
         print(f"{name}: {n} chunks")
 
@@ -110,6 +111,11 @@ def main(argv: list[str] | None = None) -> None:
     i = sub.add_parser("ingest", help="Download 10-Ks from EDGAR and index them")
     i.add_argument("tickers", nargs="*", default=DEMO_TICKERS)
     i.add_argument("--years", type=int, default=1, help="How many recent 10-Ks per company")
+    i.add_argument(
+        "--rechunk",
+        action="store_true",
+        help="Re-chunk and re-embed filings already indexed (after a chunking change); uses the download cache",
+    )
     i.set_defaults(func=cmd_ingest)
 
     a = sub.add_parser("ask", help="Ask a question from the command line")

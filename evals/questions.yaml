@@ -5,6 +5,8 @@
 #   false = search every filing, so retrieval must also find the right company.
 # Two or more tickers make a comparison question: a hit needs any one of them, and the
 #   "every company" rate needs the expected Item for each of them in the top k.
+# numeric: true = the answer is a figure in a financial table; the report shows hit rate and MRR
+#   for these questions on their own.
 # unanswerable: true = the filings do not contain the answer; the model should say so.
 
 questions:
@@ -163,6 +165,44 @@ questions:
     tickers: [AMZN]
     expect: {sections: ["9A", "8"]}
     filter_tickers: true
+
+  # Numeric: the answer is a figure in a table (MD&A or the financial statements)
+  - id: n-aapl-net-sales-category
+    question: What were Apple's net sales by category (iPhone, Mac, iPad, Wearables, Services) for the fiscal year?
+    tickers: [AAPL]
+    expect: {sections: ["7", "8"]}
+    filter_tickers: true
+    numeric: true
+  - id: n-nvda-segment-revenue
+    question: What revenue did NVIDIA report for its Compute & Networking and Graphics segments?
+    tickers: [NVDA]
+    expect: {sections: ["7", "8"]}
+    filter_tickers: true
+    numeric: true
+  - id: n-msft-segment-operating-income
+    question: What was operating income for each of Microsoft's segments in the fiscal year?
+    tickers: [MSFT]
+    expect: {sections: ["7", "8"]}
+    filter_tickers: true
+    numeric: true
+  - id: n-amzn-segment-sales
+    question: What were Amazon's net sales for the North America, International and AWS segments?
+    tickers: [AMZN]
+    expect: {sections: ["7", "8"]}
+    filter_tickers: true
+    numeric: true
+  - id: n-tsla-automotive-revenue
+    question: How much total automotive revenue did Tesla report, compared with the prior year?
+    tickers: [TSLA]
+    expect: {sections: ["7", "8"]}
+    filter_tickers: true
+    numeric: true
+  - id: n-gs-segment-net-revenues
+    question: What were Goldman Sachs net revenues for each of its business segments?
+    tickers: [GS]
+    expect: {sections: ["7", "8"]}
+    filter_tickers: true
+    numeric: true
 
   # Cross-company: retrieval must find the right company without a filter
   - id: x-bac-cyber

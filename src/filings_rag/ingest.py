@@ -8,7 +8,7 @@ import time
 import psycopg
 
 from .chunking import chunk_section
-from .db import has_chunks, init_schema, insert_chunks, upsert_filing
+from .db import delete_chunks, has_chunks, init_schema, insert_chunks, upsert_filing
 from .edgar import EdgarClient, Filing
 from .embeddings import Embedder
 from .sections import FULL_DOCUMENT, Section, looks_itemized, split_items
@@ -25,13 +25,16 @@ def ingest_text(
     filing: Filing,
     text: str,
     items: set[str] | None = DEFAULT_ITEMS,
+    replace: bool = False,
 ) -> int:
-    """Chunk, embed and store one filing's text. Skips filings already stored.
+    """Chunk, embed and store one filing's text. Skips filings already stored, unless
+    replace=True, which swaps their chunks for new ones (after a chunking change).
 
     The filing row and its chunks are written in one transaction, so an interrupted
-    run never leaves a filing with half its chunks (which would then be skipped).
+    run never leaves a filing with half its chunks (which would then be skipped), and
+    a replaced filing keeps its old chunks until the new ones are in.
     """
-    if has_chunks(conn, filing.accession):
+    if not replace and has_chunks(conn, filing.accession):
         log.info("skip %s FY%s (already ingested)", filing.ticker, filing.fiscal_year)
         return 0
     doc_header = f"{filing.company} ({filing.ticker}) {filing.form} FY{filing.fiscal_year}"
@@ -52,6 +55,8 @@ def ingest_text(
     vectors = embedder.embed_documents([c.embed_text for c in chunks])
     with conn.transaction():
         filing_id, _ = upsert_filing(conn, filing)
+        if replace:
+            delete_chunks(conn, filing_id)
         return insert_chunks(conn, filing_id, chunks, vectors)
 
 
@@ -61,6 +66,7 @@ def ingest_tickers(
     edgar: EdgarClient,
     tickers: list[str],
     years: int = 1,
+    replace: bool = False,
 ) -> dict[str, int]:
     init_schema(conn, embedder.dim)
     counts: dict[str, int] = {}
@@ -68,7 +74,7 @@ def ingest_tickers(
         for filing in edgar.latest_10ks(ticker, count=years):
             t0 = time.perf_counter()
             text = edgar.filing_text(filing)
-            n = ingest_text(conn, embedder, filing, text)
+            n = ingest_text(conn, embedder, filing, text, replace=replace)
             counts[f"{filing.ticker} FY{filing.fiscal_year}"] = n
             log.info("%s FY%s: %d chunks in %.1fs", filing.ticker, filing.fiscal_year, n, time.perf_counter() - t0)
     return counts
