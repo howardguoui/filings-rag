@@ -8,11 +8,15 @@
 2. Answers (RAGAS 0.4, LLM-as-judge): faithfulness, answer relevancy and context
    precision on answerable questions; citation rate; correct refusals on
    unanswerable questions.
+3. Reranker ablation (--ablation, no LLM): hybrid search without the cross-encoder, then with it
+   rescoring 20 and 40 candidates: hit rate@k, MRR and retrieval latency (median, p95, rerank
+   share) for each, and the change against no rerank.
 
 Writes evals/results/<timestamp>.json, latest.json and latest.md.
 
     filings-rag eval                                   # all modes, answers by LLM_PROVIDER
     filings-rag eval --skip-generation                 # retrieval only, free
+    filings-rag eval --skip-generation --ablation      # plus the reranker ablation (20 vs 40 candidates)
     filings-rag eval --llm ollama --judge ollama       # fully local
     filings-rag eval --llm anthropic --judge anthropic --limit 10
 """
@@ -92,6 +96,21 @@ def comparison_coverage(retriever: Retriever, questions: list[Question], mode: s
     return {"rate": sum(p["every_company"] for p in per_q) / len(per_q), "per_question": per_q}
 
 
+def rank_questions(retriever: Retriever, questions: list[Question], mode: str, k: int) -> list[dict]:
+    """Search each question once: the rank of the first correct chunk (None if not in the top k) and
+    the search's timings (embed / search / rerank ms, summed over per-company searches)."""
+    rows = []
+    for q in questions:
+        res = retriever.search(q.question, mode=mode, k=k, filters=q.filters)
+        rank = next((i for i, h in enumerate(res.hits, 1) if is_hit(q, h.ticker, h.section_item)), None)
+        rows.append({"id": q.id, "rank": rank, "timings_ms": dict(res.timings_ms)})
+    return rows
+
+
+def hit_rate_and_mrr(ranks: list[int | None]) -> tuple[float, float]:
+    return sum(r is not None for r in ranks) / len(ranks), sum(1 / r for r in ranks if r) / len(ranks)
+
+
 def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: list[str], k: int) -> dict:
     """Hit rate@k, MRR and median search latency per retrieval mode, plus, when the set has comparison
     questions, how often every company named is covered with and without splitting the search, and
@@ -102,26 +121,19 @@ def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: li
     for mode in modes:
         if mode == "hybrid_rerank" and retriever.reranker is None:
             continue  # reranker not loaded in this environment
-        ranks, times, per_q = [], [], []
-        for q in answerable:
-            res = retriever.search(q.question, mode=mode, k=k, filters=q.filters)
-            rank = next((i for i, h in enumerate(res.hits, 1) if is_hit(q, h.ticker, h.section_item)), None)
-            ranks.append(rank)
-            times.append(sum(res.timings_ms.values()))
-            per_q.append({"id": q.id, "rank": rank})
+        rows = rank_questions(retriever, answerable, mode, k)
+        ranks = [r["rank"] for r in rows]
         numeric = [rank for q, rank in zip(answerable, ranks, strict=True) if q.numeric]
+        hit_rate, mrr = hit_rate_and_mrr(ranks)
         out[mode] = {
-            "hit_rate": sum(r is not None for r in ranks) / len(ranks),
-            "mrr": sum(1 / r for r in ranks if r) / len(ranks),
-            "median_ms": statistics.median(times),
-            "per_question": per_q,
+            "hit_rate": hit_rate,
+            "mrr": mrr,
+            "median_ms": statistics.median(sum(r["timings_ms"].values()) for r in rows),
+            "per_question": [{"id": r["id"], "rank": r["rank"]} for r in rows],
         }
         if numeric:
-            out[mode]["numeric"] = {
-                "n": len(numeric),
-                "hit_rate": sum(r is not None for r in numeric) / len(numeric),
-                "mrr": sum(1 / r for r in numeric if r) / len(numeric),
-            }
+            n_hit, n_mrr = hit_rate_and_mrr(numeric)
+            out[mode]["numeric"] = {"n": len(numeric), "hit_rate": n_hit, "mrr": n_mrr}
         if comparisons:
             out[mode]["comparisons"] = {
                 "n": len(comparisons),
@@ -129,6 +141,73 @@ def retrieval_metrics(retriever: Retriever, questions: list[Question], modes: li
                 "single_search": comparison_coverage(retriever, comparisons, mode, k, split=False),
             }
     return out
+
+
+def reranker_name(reranker) -> str:
+    """The cross-encoder's model name, or the class name for a stand-in without one."""
+    return getattr(reranker, "model", None) or type(reranker).__name__
+
+
+def percentile(values: list[float], p: float) -> float:
+    """Nearest-rank percentile (p in 0..100) of a non-empty list: a value that was actually measured."""
+    ordered = sorted(values)
+    return ordered[max(0, math.ceil(p / 100 * len(ordered)) - 1)]
+
+
+def reranker_ablation(
+    retriever: Retriever, questions: list[Question], k: int, candidates: tuple[int, ...] = (20, 40)
+) -> dict:
+    """Is the cross-encoder worth its latency? The same answerable questions under hybrid search
+    without a rerank, then with the cross-encoder rescoring each candidate pool size in `candidates`
+    (the fused top N handed to the reranker, CANDIDATE_K in production). For each: hit rate@k, MRR,
+    and median / p95 retrieval latency with the rerank share broken out.
+
+    Each configuration first runs one unscored search, so the first cross-encoder call's warm-up
+    (ONNX session, CPU caches) isn't billed to whichever configuration happens to go first."""
+    if retriever.reranker is None:
+        raise RuntimeError("The reranker ablation needs the cross-encoder: set RERANK_ENABLED=true.")
+    answerable = [q for q in questions if not q.unanswerable]
+    if not answerable:
+        raise ValueError("The reranker ablation needs at least one answerable question.")
+    baseline_candidates = retriever.candidate_k
+    configs = [("hybrid", "hybrid", baseline_candidates)] + [
+        (f"hybrid_rerank@{n}", "hybrid_rerank", n) for n in candidates
+    ]
+    rows: list[dict] = []
+    try:
+        for name, mode, n in configs:
+            retriever.candidate_k = n
+            rank_questions(retriever, answerable[:1], mode, k)  # warm-up, not scored
+            ranked = rank_questions(retriever, answerable, mode, k)
+            totals = [sum(r["timings_ms"].values()) for r in ranked]
+            hit_rate, mrr = hit_rate_and_mrr([r["rank"] for r in ranked])
+            rows.append(
+                {
+                    "config": name,
+                    "rerank": mode == "hybrid_rerank",
+                    "candidates": n,
+                    "hit_rate": hit_rate,
+                    "mrr": mrr,
+                    "median_ms": statistics.median(totals),
+                    "p95_ms": percentile(totals, 95),
+                    "median_rerank_ms": (
+                        statistics.median(r["timings_ms"].get("rerank_ms", 0.0) for r in ranked)
+                        if mode == "hybrid_rerank"
+                        else None
+                    ),
+                    "per_question": [{"id": r["id"], "rank": r["rank"]} for r in ranked],
+                }
+            )
+    finally:
+        retriever.candidate_k = baseline_candidates
+    base = rows[0]
+    for row in rows[1:]:
+        row["vs_no_rerank"] = {
+            "hit_rate": row["hit_rate"] - base["hit_rate"],
+            "mrr": row["mrr"] - base["mrr"],
+            "median_ms": row["median_ms"] - base["median_ms"],
+        }
+    return {"n": len(answerable), "k": k, "reranker": reranker_name(retriever.reranker), "configs": rows}
 
 
 def expected_random(n: int, m: int, k: int) -> tuple[float, float]:
@@ -318,6 +397,40 @@ def result_stamp(run_at: str) -> str:
     return re.sub(r"\D", "", run_at)[:12]
 
 
+def ablation_lines(a: dict) -> list[str]:
+    """Markdown for the reranker ablation: one row per configuration, changes against no rerank."""
+
+    def signed(x: float, digits: int) -> str:
+        """'+6', '-0.02', and '+0' rather than '-0' for a change that rounds to nothing."""
+        return f"{round(x, digits) + 0.0:+.{digits}f}"
+
+    lines = [
+        "",
+        f"## Reranker ablation ({a['n']} questions, hybrid search, top {a['k']}, reranker `{a['reranker']}`)",
+        "",
+        "Candidates: fused chunks the cross-encoder rescores (for no rerank, the size of each search's list "
+        "before fusion). Latency is embed + search + rerank per question.",
+        "",
+        "| Configuration | Candidates | Hit rate | MRR | Median retrieval | p95 retrieval | Median rerank "
+        "| Hit rate vs no rerank | MRR vs no rerank | Median latency vs no rerank |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for c in a["configs"]:
+        d = c.get("vs_no_rerank")
+        rerank = "–" if c["median_rerank_ms"] is None else f"{c['median_rerank_ms']:.0f} ms"
+        deltas = (
+            f"{signed(d['hit_rate'] * 100, 0)} pts | {signed(d['mrr'], 2)} | {signed(d['median_ms'], 0)} ms"
+            if d
+            else "– | – | –"
+        )
+        name = "no rerank" if not c["rerank"] else f"rerank top {c['candidates']}"
+        lines.append(
+            f"| {name} | {c['candidates']} | {c['hit_rate']:.0%} | {c['mrr']:.2f} | {c['median_ms']:.0f} ms "
+            f"| {c['p95_ms']:.0f} ms | {rerank} | {deltas} |"
+        )
+    return lines
+
+
 def write_report(result: dict) -> Path:
     RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / f"{result_stamp(result['run_at'])}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
@@ -364,6 +477,8 @@ def write_report(result: dict) -> Path:
         ]
         for mode, m in numeric.items():
             lines.append(f"| {mode} | {pct(m['hit_rate'])} | {m['mrr']:.2f} |")
+    if a := result.get("ablation"):
+        lines += ablation_lines(a)
     g = result.get("generation")
     if g:
         judged = f"judged by {g['judge']}" if g["judge"] else "not judged: pass --judge for RAGAS scores"
@@ -395,13 +510,15 @@ def main(
     skip_generation: bool,
     retriever: Retriever | None = None,
     settings: Settings | None = None,
+    ablation: bool = False,
+    ablation_candidates: tuple[int, ...] = (20, 40),
 ) -> dict:
     settings = settings or get_settings()
     questions = load_questions()[: limit or None]
     if retriever is None:
         from filings_rag.cli import _retriever
 
-        retriever = _retriever(settings, rerank="hybrid_rerank" in modes)
+        retriever = _retriever(settings, rerank="hybrid_rerank" in modes or ablation)
     k = settings.top_k
 
     result = {
@@ -412,6 +529,8 @@ def main(
         "retrieval": retrieval_metrics(retriever, questions, modes, k),
         "baseline": random_baseline(retriever, questions, k),
     }
+    if ablation:
+        result["ablation"] = reranker_ablation(retriever, questions, k, tuple(ablation_candidates))
     if not skip_generation:
         best = max(result["retrieval"], key=lambda m: result["retrieval"][m]["mrr"])
         result["generation"] = generation_metrics(retriever, questions, settings, llm, judge, best, k)

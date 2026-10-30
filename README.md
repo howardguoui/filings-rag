@@ -49,7 +49,8 @@ flowchart LR
   chips and asking "compare their cybersecurity governance" does the same. Matching uses the names in the index, so
   it needs no LLM call, and the question is embedded once for all the searches.
 - **Reranking.** The top 40 fused candidates are rescored by a cross-encoder (`ms-marco-MiniLM-L-6-v2`) that reads
-  the question and passage together.
+  the question and passage together, at a latency cost the reranker ablation (`filings-rag eval --ablation`)
+  measures against no rerank and a 20-candidate pool.
 - **Grounded answers.** The model may only use the numbered sources, must cite every sentence, and must say
   "The filings provided do not contain this information" when they don't.
 - **Three answer backends.** Claude API for the public demo, Ollama for free local runs, vLLM for fast local serving.
@@ -73,6 +74,7 @@ unanswerable ones that test refusals.
 | Retrieval | Hit rate@6 (the right company and Item is retrieved) and MRR, for vector, keyword, hybrid and hybrid + rerank, next to the exact score of a random ranking under the same filters |
 | Comparisons | Share of comparison questions where every company named has its Item in the top 6, with one search per company and with one search for the whole question |
 | Numeric questions | Hit rate@6 and MRR on the questions answered by a figure in a table |
+| Reranker ablation (`--ablation`) | Hit rate@6, MRR, median and p95 retrieval latency and rerank time for hybrid search with no rerank and with the cross-encoder over 20 and over 40 candidates, each against no rerank |
 | Answers (RAGAS, LLM judge) | Faithfulness, answer relevancy, context precision (no reference needed) |
 | Behavior | Citation rate, correct refusals on unanswerable questions, false refusals |
 
@@ -86,6 +88,10 @@ covers the first 32 answerable ones):
   was refused.
 
 The judge is the same 8B model that writes the answers, so a stronger judge would be a stricter test.
+
+The reranker ablation has not been run on real filings yet; its first numbers come from the next
+`scripts/publish_results.sh` run (which now passes `--ablation`) and will appear in `latest.md`. Until then, nothing
+here claims the cross-encoder pays for its latency.
 
 Each run writes `evals/results/latest.md` and `latest.json`; the demo's Evaluations tab shows the latest run.
 Commit the results folder so the deployed demo shows them.
@@ -110,6 +116,7 @@ filings-rag serve                 # http://localhost:8080
 
 ```bash
 filings-rag eval --skip-generation                    # retrieval only, no LLM cost
+filings-rag eval --skip-generation --ablation         # plus no rerank vs rerank over 20 / 40 candidates
 filings-rag eval --llm ollama --judge ollama          # fully local answers + RAGAS
 filings-rag eval --llm anthropic --judge anthropic    # Claude answers and grades
 scripts/publish_results.sh                            # run the evals and push results to GitHub

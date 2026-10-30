@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run the evaluations on this machine and publish the results to GitHub.
-#   scripts/publish_results.sh                 # ingest if the DB is empty, retrieval eval + local RAGAS (Ollama)
+#   scripts/publish_results.sh                 # ingest if the DB is empty, retrieval eval + reranker ablation
+#                                              # (no rerank vs rerank over 20 / 40 candidates) + local RAGAS (Ollama)
 #   JUDGE=anthropic scripts/publish_results.sh # answers and grading by Claude instead (costs API credits)
 #   BENCH=1 scripts/publish_results.sh         # also the Ollama / vLLM / Claude latency benchmark
 #   SKIP_RUN=1 scripts/publish_results.sh      # just commit results already on disk
@@ -15,7 +16,7 @@ s = get_settings(); c = connect(s.database_url); init_schema(c, s.embed_dim); pr
     echo "No filings indexed yet: ingesting the demo companies."
     filings-rag ingest
   fi
-  filings-rag eval --llm "$JUDGE" --judge "$JUDGE"
+  filings-rag eval --llm "$JUDGE" --judge "$JUDGE" --ablation
   if [ "${BENCH:-0}" = 1 ]; then
     python -m benchmarks.llm_latency --providers ollama vllm anthropic --runs 10 || echo "benchmark skipped a provider"
   fi

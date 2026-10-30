@@ -7,14 +7,18 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
 
 - [ ] **Live demo on Render** (visitors type their own questions) once an API budget is worth it; the free static
       demo covers the portfolio use for now.
-- [ ] **Reranker ablation:** report hit rate and latency with and without the cross-encoder, and with 20 vs 40
-      candidates, so the reranking cost is justified by numbers.
 - [ ] **Multi-year filings:** ingest 3 fiscal years per company and add year-over-year questions
       ("how did risk factors change from FY2024 to FY2025").
 - [ ] **Answer cache:** cache answers by normalized question + filters in Postgres to cut repeat cost on the demo.
 
 ## Shipped
 
+- 2026-10-30: reranker ablation: `filings-rag eval --ablation` runs the same answerable questions with hybrid search
+  and no rerank, then with the cross-encoder rescoring 20 and 40 candidates (`--ablation-candidates` for other
+  sizes), and records hit rate@k, MRR, median and p95 retrieval latency and the median rerank time for each, with the
+  change against no rerank, in the results JSON (`ablation`) and a table in `latest.md`.
+  `scripts/publish_results.sh` runs it. No numbers yet: the first real ones come from the owner's next
+  `scripts/publish_results.sh` run on the GPU machine; nothing in `evals/results/` was added by this change.
 - 2026-10-30: tracing: each question is one OpenTelemetry trace (`answer` → `retrieve` → `embed` / `search` per
   company / `rerank`, and `generate` with `gen_ai.*` model and token attributes and a `first_token` event when
   streamed). `TRACING=console` prints spans, `TRACING=otlp` exports them over OTLP/HTTP; off by default, with only

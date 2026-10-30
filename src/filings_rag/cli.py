@@ -4,6 +4,7 @@ filings-rag ingest AAPL MSFT NVDA JPM BAC --years 1
 filings-rag ingest --rechunk           # rebuild the chunks of filings already indexed
 filings-rag ask "What cybersecurity risks does JPMorgan describe?" --tickers JPM
 filings-rag eval --modes vector hybrid hybrid_rerank
+filings-rag eval --skip-generation --ablation   # hit rate and latency with/without the reranker, 20 vs 40 candidates
 filings-rag serve
 filings-rag demo-export --llm ollama   # record answers into docs/ for the free GitHub Pages demo
 """
@@ -74,7 +75,15 @@ def cmd_eval(args) -> None:
     sys.path.insert(0, str(Path.cwd()))  # evals/ lives at the repo root; run this from there
     from evals.run_evals import main as run_evals
 
-    run_evals(args.modes, args.llm, args.judge, args.limit, args.skip_generation)
+    run_evals(
+        args.modes,
+        args.llm,
+        args.judge,
+        args.limit,
+        args.skip_generation,
+        ablation=args.ablation,
+        ablation_candidates=tuple(args.ablation_candidates),
+    )
 
 
 def cmd_demo_export(args) -> None:
@@ -133,6 +142,19 @@ def main(argv: list[str] | None = None) -> None:
     e.add_argument("--judge", choices=["anthropic", "ollama", "vllm"], help="Model that grades (RAGAS)")
     e.add_argument("--limit", type=int, help="Only the first N questions")
     e.add_argument("--skip-generation", action="store_true", help="Retrieval metrics only (no LLM calls)")
+    e.add_argument(
+        "--ablation",
+        action="store_true",
+        help="Also compare hybrid search without the cross-encoder and with it over each candidate pool size",
+    )
+    e.add_argument(
+        "--ablation-candidates",
+        nargs="+",
+        type=int,
+        default=[20, 40],
+        metavar="N",
+        help="Candidate pool sizes the reranker rescores in the ablation (default: 20 40)",
+    )
     e.set_defaults(func=cmd_eval)
 
     d = sub.add_parser("demo-export", help="Record real answers and build the static demo (GitHub Pages)")

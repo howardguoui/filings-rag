@@ -13,6 +13,7 @@ class CrossEncoderReranker:
     def __init__(self, model: str):
         from fastembed.rerank.cross_encoder import TextCrossEncoder
 
+        self.model = model
         self._model = TextCrossEncoder(model_name=model)
 
     def rerank(self, query: str, hits: list[Hit], k: int) -> list[Hit]:
