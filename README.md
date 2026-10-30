@@ -171,8 +171,12 @@ Free Render web services sleep after 15 minutes idle (about a minute to wake), a
 
 ```bash
 docker compose up -d db
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/filings pytest
+docker compose exec db createdb -U postgres filings_test
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/filings_test pytest
 ```
+
+Use a separate database: the test fixtures drop and recreate the `chunks` and `filings` tables, so pointing
+`TEST_DATABASE_URL` at the `filings` database would wipe an ingested index. CI uses `filings_test` too.
 
 Parsing, chunking, EDGAR pagination and retries, hybrid SQL against real pgvector, the API (validation, rate limits,
 connection pool, health check, failures, the streamed event sequence), the trace shape (span nesting, `gen_ai.*`
