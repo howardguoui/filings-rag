@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 LLMProvider = Literal["anthropic", "ollama", "vllm", "fake"]
 EmbedProvider = Literal["fastembed", "ollama", "hash"]
 RetrievalMode = Literal["vector", "keyword", "hybrid", "hybrid_rerank"]
+TracingMode = Literal["off", "console", "otlp"]
 
 
 class Settings(BaseSettings):
@@ -60,6 +61,10 @@ class Settings(BaseSettings):
     # dodge the rate limit by sending their own X-Forwarded-For.
     trusted_proxy_hops: int = 1
     db_pool_max: int = 4
+
+    # OpenTelemetry spans per question (embed / search / rerank / generate), see tracing.py.
+    # "console" prints them; "otlp" sends them to OTEL_EXPORTER_OTLP_ENDPOINT. Needs the `tracing` extra.
+    tracing: TracingMode = "off"
 
 
 @lru_cache

@@ -57,6 +57,10 @@ flowchart LR
   one `answer` event with the citations and timings, including `first_token_ms` (from the start of retrieval to the
   first words). The demo page shows the answer as it is written. `POST /api/ask` still returns the whole answer as
   JSON.
+- **Tracing.** Each question is one OpenTelemetry trace: an `answer` span with `retrieve` (and its `embed`, one
+  `search` per company, `rerank`) and `generate` under it. `generate` carries the model and token counts as
+  `gen_ai.*` attributes, and a streamed answer marks its first token with an event, so a slow request shows whether
+  the time went to the database, the reranker or the model. Off by default; see [Tracing](#tracing).
 
 ## Evaluation
 
@@ -120,6 +124,19 @@ python -m benchmarks.llm_latency --providers ollama vllm anthropic --runs 10
 
 Answers are streamed, so the table reports median time to first token next to median and p90 total latency.
 
+### Tracing
+
+```bash
+pip install -e ".[tracing]"                           # OpenTelemetry SDK + OTLP/HTTP exporter
+TRACING=console filings-rag ask "What drove Apple's gross margin?" --tickers AAPL   # spans printed as JSON
+TRACING=otlp OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 filings-rag serve    # to a collector
+```
+
+`TRACING=otlp` sends spans over OTLP/HTTP to `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`; the
+exporter appends `/v1/traces`), so any OpenTelemetry Collector or backend that accepts OTLP can show them.
+`OTEL_SERVICE_NAME` overrides the service name `filings-rag`. With tracing off, the spans are the OpenTelemetry
+API's no-ops. If a provider is already installed (for example by `opentelemetry-instrument`), it is left in place.
+
 ## Free static demo (GitHub Pages)
 
 `filings-rag demo-export --llm ollama` answers a fixed set of example questions for real (same retrieval and
@@ -151,7 +168,8 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/filings pytest
 ```
 
 Parsing, chunking, EDGAR pagination and retries, hybrid SQL against real pgvector, the API (validation, rate limits,
-connection pool, health check, failures, the streamed event sequence), the eval harness, and the exact request
+connection pool, health check, failures, the streamed event sequence), the trace shape (span nesting, `gen_ai.*`
+attributes, error status, spans that end when a stream is cut off), the eval harness, and the exact request
 shape sent to the Anthropic SDK (plain and streamed), the OpenAI-compatible client and the RAGAS judge are covered.
 CI runs them on pushes to `main` and on pull requests, with a pgvector service container.
 
@@ -161,6 +179,7 @@ CI runs them on pushes to `main` and on pull requests, with a pgvector service c
 ROADMAP.md         what's next
 src/filings_rag/   edgar.py (download) · sections.py · chunking.py · embeddings.py · db.py
                    retrieval.py (vector / keyword / hybrid SQL) · rerank.py · llm.py · rag.py · api.py · cli.py
+                   tracing.py (OpenTelemetry)
 evals/             questions.yaml · run_evals.py · results/
 benchmarks/        llm_latency.py
 ```

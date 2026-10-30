@@ -148,6 +148,9 @@ def main(argv: list[str] | None = None) -> None:
     sv.set_defaults(func=cmd_serve)
 
     args = p.parse_args(argv)
+    from .tracing import configure_tracing
+
+    configure_tracing(get_settings().tracing)  # TRACING=console or otlp; `serve` sets it up in the app instead
     args.func(args)
 
 

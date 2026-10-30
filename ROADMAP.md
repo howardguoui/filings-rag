@@ -11,12 +11,15 @@ Shipped items move to the bottom with the date. Evaluation numbers are only comm
       candidates, so the reranking cost is justified by numbers.
 - [ ] **Multi-year filings:** ingest 3 fiscal years per company and add year-over-year questions
       ("how did risk factors change from FY2024 to FY2025").
-- [ ] **Tracing:** OpenTelemetry spans for embed / search / rerank / generate, exported to the console or an
-      OTLP endpoint, so slow requests can be broken down.
 - [ ] **Answer cache:** cache answers by normalized question + filters in Postgres to cut repeat cost on the demo.
 
 ## Shipped
 
+- 2026-10-30: tracing: each question is one OpenTelemetry trace (`answer` → `retrieve` → `embed` / `search` per
+  company / `rerank`, and `generate` with `gen_ai.*` model and token attributes and a `first_token` event when
+  streamed). `TRACING=console` prints spans, `TRACING=otlp` exports them over OTLP/HTTP; off by default, with only
+  the no-op OpenTelemetry API installed unless the `tracing` extra is. Streamed answers keep a whole trace across
+  server threads and end their spans when the reader disconnects.
 - 2026-10-23: table-aware chunks: financial tables become chunks of their own with their caption (the lead-in
   sentence), split by rows with the caption and header row repeated when too long; layout tables stay prose.
   `filings-rag ingest --rechunk` rebuilds the chunks of filings already indexed. Six numeric questions in

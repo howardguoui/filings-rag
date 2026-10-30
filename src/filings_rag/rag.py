@@ -7,8 +7,12 @@ import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
+from opentelemetry import trace
+from opentelemetry.trace import Span, Status, StatusCode
+
 from .llm import LLM, Generation, StreamingLLM
 from .retrieval import Filters, Hit, Retriever
+from .tracing import tracer
 
 SYSTEM_PROMPT = """You answer questions about SEC 10-K filings using only the numbered sources provided.
 
@@ -93,6 +97,39 @@ def _finish(question: str, hits: list[Hit], gen: Generation, mode: str, timings:
     )
 
 
+def _answer_span_attrs(mode: str, k: int, filters: Filters | None) -> dict:
+    attrs: dict = {"rag.mode": mode, "rag.k": k}
+    if filters and filters.tickers:
+        attrs["rag.tickers"] = [t.upper() for t in filters.tickers]
+    if filters and filters.fiscal_year:
+        attrs["rag.fiscal_year"] = filters.fiscal_year
+    return attrs
+
+
+def _record_answer(span: Span, ans: Answer, n_hits: int) -> None:
+    span.set_attributes(
+        {
+            "rag.hits": n_hits,
+            "rag.citations": len(ans.citations),
+            "rag.abstained": ans.abstained,
+            "rag.retrieval_mode": ans.mode,
+        }
+    )
+
+
+def _generate_span_attrs(llm: LLM, max_tokens: int) -> dict:
+    # OpenTelemetry GenAI semantic conventions (gen_ai.*)
+    return {"gen_ai.operation.name": "chat", "gen_ai.request.model": llm.name, "gen_ai.request.max_tokens": max_tokens}
+
+
+def _record_generation(span: Span, gen: Generation) -> None:
+    span.set_attribute("gen_ai.response.model", gen.model)
+    if gen.input_tokens is not None:
+        span.set_attribute("gen_ai.usage.input_tokens", gen.input_tokens)
+    if gen.output_tokens is not None:
+        span.set_attribute("gen_ai.usage.output_tokens", gen.output_tokens)
+
+
 def answer_question(
     question: str,
     retriever: Retriever,
@@ -102,15 +139,25 @@ def answer_question(
     filters: Filters | None = None,
     max_tokens: int = 700,
 ) -> Answer:
-    retrieved = retriever.search(question, mode=mode, k=k, filters=filters)
-    hits = retrieved.hits
-    timings = dict(retrieved.timings_ms)
-    if not hits:
-        return _abstain(question, retrieved.mode, llm.name, timings)
+    with tracer.start_as_current_span("answer", attributes=_answer_span_attrs(mode, k, filters)) as span:
+        retrieved = retriever.search(question, mode=mode, k=k, filters=filters)
+        hits = retrieved.hits
+        timings = dict(retrieved.timings_ms)
+        if not hits:
+            ans = _abstain(question, retrieved.mode, llm.name, timings)
+        else:
+            with tracer.start_as_current_span("generate", attributes=_generate_span_attrs(llm, max_tokens)) as g:
+                gen = llm.generate(SYSTEM_PROMPT, build_prompt(question, hits), max_tokens)
+                _record_generation(g, gen)
+            timings["generate_ms"] = gen.latency_ms
+            ans = _finish(question, hits, gen, retrieved.mode, timings)
+        _record_answer(span, ans, len(hits))
+        return ans
 
-    gen = llm.generate(SYSTEM_PROMPT, build_prompt(question, hits), max_tokens)
-    timings["generate_ms"] = gen.latency_ms
-    return _finish(question, hits, gen, retrieved.mode, timings)
+
+def _fail(span: Span, exc: BaseException) -> None:
+    span.record_exception(exc)
+    span.set_status(Status(StatusCode.ERROR, f"{type(exc).__name__}: {exc}"))
 
 
 def stream_answer(
@@ -126,27 +173,53 @@ def stream_answer(
 
     The Answer's timings gain `first_token_ms`: from the start of retrieval to the first answer text,
     i.e. how long a reader waits before anything appears. It is not part of the latency total.
-    """
-    t0 = time.perf_counter()
-    retrieved = retriever.search(question, mode=mode, k=k, filters=filters)
-    hits = retrieved.hits
-    timings = dict(retrieved.timings_ms)
-    if not hits:
-        ans = _abstain(question, retrieved.mode, llm.name, timings)
-        yield ans.answer
-        yield ans
-        return
 
-    t_gen = time.perf_counter()
-    gen: Generation | None = None
-    for piece in llm.stream(SYSTEM_PROMPT, build_prompt(question, hits), max_tokens):
-        if isinstance(piece, Generation):
-            gen = piece
-        else:
-            yield piece
-    if gen is None:
-        raise RuntimeError(f"{llm.name} stream ended without a final result")
-    timings["generate_ms"] = gen.latency_ms
-    if gen.first_token_ms is not None:
-        timings["first_token_ms"] = round((t_gen - t0) * 1000 + gen.first_token_ms, 1)
-    yield _finish(question, hits, gen, retrieved.mode, timings)
+    Spans are started and ended by hand rather than made current across a `yield`: a web server may
+    resume the generator on another thread, where a context attached on the first thread can't be
+    detached. Each span still ends if the reader goes away mid-answer (the generator is closed).
+    """
+    root = tracer.start_span("answer", attributes=_answer_span_attrs(mode, k, filters))
+    ctx = trace.set_span_in_context(root)
+    try:
+        t0 = time.perf_counter()
+        with trace.use_span(root, end_on_exit=False):  # no yield inside: retrieval's spans nest under root
+            retrieved = retriever.search(question, mode=mode, k=k, filters=filters)
+        hits = retrieved.hits
+        timings = dict(retrieved.timings_ms)
+        if not hits:
+            ans = _abstain(question, retrieved.mode, llm.name, timings)
+            _record_answer(root, ans, 0)
+            yield ans.answer
+            yield ans
+            return
+
+        t_gen = time.perf_counter()
+        gen: Generation | None = None
+        g = tracer.start_span("generate", context=ctx, attributes=_generate_span_attrs(llm, max_tokens))
+        try:
+            for piece in llm.stream(SYSTEM_PROMPT, build_prompt(question, hits), max_tokens):
+                if isinstance(piece, Generation):
+                    gen = piece
+                else:
+                    yield piece
+            if gen is None:
+                raise RuntimeError(f"{llm.name} stream ended without a final result")
+            _record_generation(g, gen)
+            if gen.first_token_ms is not None:
+                g.add_event("first_token", {"gen_ai.first_token_ms": gen.first_token_ms})
+        except Exception as exc:
+            _fail(g, exc)
+            raise
+        finally:
+            g.end()
+        timings["generate_ms"] = gen.latency_ms
+        if gen.first_token_ms is not None:
+            timings["first_token_ms"] = round((t_gen - t0) * 1000 + gen.first_token_ms, 1)
+        ans = _finish(question, hits, gen, retrieved.mode, timings)
+        _record_answer(root, ans, len(hits))
+        yield ans
+    except Exception as exc:
+        _fail(root, exc)
+        raise
+    finally:
+        root.end()

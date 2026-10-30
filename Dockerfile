@@ -11,7 +11,7 @@ WORKDIR /app
 # reinstall every wheel or re-download the models.
 COPY pyproject.toml README.md ./
 RUN mkdir -p src/filings_rag && touch src/filings_rag/__init__.py \
-    && pip install . && pip uninstall -y filings-rag && rm -rf src
+    && pip install ".[tracing]" && pip uninstall -y filings-rag && rm -rf src
 
 # Bake the embedding and reranker models into the image so cold starts don't download them.
 RUN python -c "from fastembed import TextEmbedding; from fastembed.rerank.cross_encoder import TextCrossEncoder; \

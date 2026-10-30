@@ -19,6 +19,7 @@ import psycopg
 from .config import RetrievalMode
 from .embeddings import Embedder
 from .query_plan import Company, interleave, split_tickers
+from .tracing import tracer
 
 RRF_K = 60
 
@@ -156,7 +157,19 @@ class Retriever:
         """Top k chunks for a query. With split_companies, a query that names two or more companies
         (or one with no company named, filtered to several) runs once per company and the per-company
         rankings are interleaved, so each company gets about k / n of the slots."""
-        filters = filters or Filters()
+        with tracer.start_as_current_span("retrieve") as span:
+            result = self._search_all(query, mode, k, filters or Filters(), split_companies)
+            span.set_attributes(
+                {
+                    "retrieval.mode": result.mode,
+                    "retrieval.k": k,
+                    "retrieval.hits": len(result.hits),
+                    "retrieval.split_tickers": result.split_tickers,
+                }
+            )
+            return result
+
+    def _search_all(self, query: str, mode: str, k: int, filters: Filters, split_companies: bool) -> RetrievalResult:
         if mode == "hybrid_rerank" and self.reranker is None:
             mode = "hybrid"  # reranker disabled in this deployment
         one_company = filters.tickers is not None and len({t.upper() for t in filters.tickers}) == 1
@@ -167,9 +180,7 @@ class Retriever:
         timings: dict[str, float] = {}
         qvec = None
         if mode != "keyword":  # embed once; every company's search uses the same query text
-            t0 = time.perf_counter()
-            qvec = np.asarray(self.embedder.embed_query(query), dtype=np.float32)
-            timings["embed_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            qvec = self._embed(query, timings)
         rankings = [self._search(query, mode, k, replace(filters, tickers=[t]), qvec, timings).hits for t in tickers]
         return RetrievalResult(hits=interleave(rankings, k), mode=mode, timings_ms=timings, split_tickers=tickers)
 
@@ -182,23 +193,32 @@ class Retriever:
 
         params.update({"text": query, "k": fetch_k, "cand": self.candidate_k})
         if mode in ("vector", "hybrid", "hybrid_rerank"):
-            if qvec is None:
-                t0 = time.perf_counter()
-                qvec = np.asarray(self.embedder.embed_query(query), dtype=np.float32)
-                _add(timings, "embed_ms", t0)
-            params["q"] = qvec
+            params["q"] = qvec if qvec is not None else self._embed(query, timings)
 
         sql = {"vector": _vector_sql, "keyword": _keyword_sql}.get(mode, _hybrid_sql)(where)
-        t1 = time.perf_counter()
-        rows = self.conn.execute(sql, params).fetchall()
-        _add(timings, "search_ms", t1)
+        with tracer.start_as_current_span("search") as span:
+            t1 = time.perf_counter()
+            rows = self.conn.execute(sql, params).fetchall()
+            _add(timings, "search_ms", t1)
+            span.set_attributes({"retrieval.mode": mode, "retrieval.limit": fetch_k, "retrieval.rows": len(rows)})
+            if filters.tickers:
+                span.set_attribute("retrieval.tickers", [t.upper() for t in filters.tickers])
         hits = [Hit(**{**r, "score": float(r["score"])}) for r in rows]
 
         if mode == "hybrid_rerank" and hits:
-            t2 = time.perf_counter()
-            hits = self.reranker.rerank(query, hits, k)
-            _add(timings, "rerank_ms", t2)
+            with tracer.start_as_current_span("rerank") as span:
+                span.set_attribute("rerank.candidates", len(hits))
+                t2 = time.perf_counter()
+                hits = self.reranker.rerank(query, hits, k)
+                _add(timings, "rerank_ms", t2)
         return RetrievalResult(hits=hits[:k], mode=mode, timings_ms=timings)
+
+    def _embed(self, query: str, timings: dict[str, float]) -> np.ndarray:
+        with tracer.start_as_current_span("embed"):
+            t0 = time.perf_counter()
+            qvec = np.asarray(self.embedder.embed_query(query), dtype=np.float32)
+            _add(timings, "embed_ms", t0)
+        return qvec
 
 
 def _add(timings: dict[str, float], key: str, since: float) -> None:

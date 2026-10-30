@@ -93,7 +93,9 @@ def create_app(settings: Settings | None = None, conn=None, embedder=None, llm=N
         from .db import init_schema, make_pool
         from .embeddings import make_embedder
         from .llm import make_llm
+        from .tracing import configure_tracing
 
+        configure_tracing(settings.tracing)
         if state["embedder"] is None:
             state["embedder"] = make_embedder(settings)
         if state["conn"] is None:
